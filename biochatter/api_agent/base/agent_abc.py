@@ -37,14 +37,14 @@ def run_codes(code: str, state: dict[str, object]):
 
 class BaseQueryBuilder(ABC):
     """An abstract base class for query builders."""
-    def __init__(self, conversation: Conversation):
+    def __init__(self, conversation: Conversation | None = None):
         """Initialise the query builder with a conversation object."""
         self.conversation = conversation
-
-        load_dotenv()
-        self.conversation.set_api_key(
-            os.environ.get("API_KEY")
-        )
+        if conversation is not None: 
+            load_dotenv()
+            self.conversation.set_api_key(
+                os.environ.get("API_KEY")
+            )
 
     @property
     def structured_output_prompt(self) -> ChatPromptTemplate:
@@ -106,7 +106,7 @@ class BaseFetcher(ABC):
     def fetch_results(
         self,
         query_models: list[BaseModel],
-        data: object,
+        data: object | None = None,
         retries: int | None = 3,
     ):
         """Fetch results by submitting a query.
@@ -129,14 +129,14 @@ class BaseInterpreter(ABC):
     The interpreter is aware of the nature and structure of the results and can
     extract and summarise information from them.
     """
-    def __init__(self, conversation: Conversation):
+    def __init__(self, conversation: Conversation | None = None):
         """Initialise the interpreter with a conversation object."""
         self.conversation = conversation
-
-        load_dotenv()
-        self.conversation.set_api_key(
-            os.environ.get("API_KEY")
-        )
+        if conversation is not None:
+            load_dotenv()
+            self.conversation.set_api_key(
+                os.environ.get("API_KEY")
+            )
 
     @abstractmethod
     def summarise_results(

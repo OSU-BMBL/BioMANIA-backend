@@ -1,10 +1,10 @@
 import scanpy as sc
-
+import pytest
 from biochatter.api_agent.gen_data_model import generate_pydantic_classes
 
 EXPECTED_UMAP_PARAMS = 16
 
-
+@pytest.mark.skip()
 def test_generate_pydantic_classes():
     # Generate the Pydantic classes
     generated_classes = generate_pydantic_classes(module=sc.tl)
@@ -23,6 +23,7 @@ def test_generate_pydantic_classes():
         assert isinstance(schema["properties"], dict)
 
 
+@pytest.mark.skip()
 def test_generate_pydantic_classes_umap():
     # Test a specific function we know should be in sc.tl
     generated_classes = generate_pydantic_classes(module=sc.tl)

@@ -10,6 +10,7 @@ class RagAgentModeEnum:
     KG = "kg"
     API_BLAST = "api_blast"
     API_ONCOKB = "api_oncokb"
+    API_SCANPI = "api_scanpy"
 
 
 class RagAgent:
@@ -80,83 +81,24 @@ class RagAgent:
         self.documentids_workspace = documentids_workspace
         self.last_response = []
         self._agent_desc = agent_desc
-        if self.mode == RagAgentModeEnum.KG:
-            from .database_agent import DatabaseAgent
 
-            if not connection_args:
-                raise ValueError(
-                    "Please provide connection args to connect to database.",
-                )
-
-            if not schema_config_or_info_dict:
-                raise ValueError("Please provide a schema config or info dict.")
-            self.schema_config_or_info_dict = schema_config_or_info_dict
-
-            self.agent = DatabaseAgent(
-                model_name=model_name,
-                connection_args=connection_args,
-                schema_config_or_info_dict=self.schema_config_or_info_dict,
-                conversation_factory=conversation_factory,
-                use_reflexion=use_reflexion,
-            )
-
-            self.agent.connect()
-
-            self.query_func = self.agent.get_query_results
-
-        elif self.mode == RagAgentModeEnum.VectorStore:
-            from .vectorstore_agent import VectorDatabaseAgentMilvus
-
-            if not connection_args:
-                raise ValueError(
-                    "Please provide connection args to connect to vector store.",
-                )
-
-            if not embedding_func:
-                raise ValueError("Please provide an embedding function.")
-
-            self.agent = VectorDatabaseAgentMilvus(
-                embedding_func=embedding_func,
-                connection_args=connection_args,
-            )
-
-            self.agent.connect()
-
-            self.query_func = self.agent.similarity_search
-
-        elif self.mode == RagAgentModeEnum.API_BLAST:
+        if self.mode == RagAgentModeEnum.API_SCANPI:
             from .api_agent.base.api_agent import APIAgent
-            from .api_agent.web.blast import (
-                BlastFetcher,
-                BlastInterpreter,
-                BlastQueryBuilder,
+            from .api_agent.python.scanpy.agent import (
+                ScanpyFetcher,
+                ScanpyInterpreter,
+                ScanpyQueryBuilder,
             )
-
+            conversation = conversation_factory()
             self.agent = APIAgent(
-                conversation_factory=conversation_factory,
-                query_builder=BlastQueryBuilder(),
-                fetcher=BlastFetcher(),
-                interpreter=BlastInterpreter(),
+                query_builder=ScanpyQueryBuilder(conversation),
+                fetcher=ScanpyFetcher(conversation),
+                interpreter=ScanpyInterpreter(conversation),
             )
-            self.query_func = self.agent.execute
-        elif self.mode == RagAgentModeEnum.API_ONCOKB:
-            from .api_agent.base.api_agent import APIAgent
-            from .api_agent.web.oncokb import (
-                OncoKBFetcher,
-                OncoKBInterpreter,
-                OncoKBQueryBuilder,
-            )
-
-            self.agent = APIAgent(
-                conversation_factory=conversation_factory,
-                query_builder=OncoKBQueryBuilder(),
-                fetcher=OncoKBFetcher(),
-                interpreter=OncoKBInterpreter(),
-            )
-            self.query_func = self.agent.execute
+            self.query_func = self.agent.execute        
         else:
             raise ValueError(
-                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', or 'api_oncokb'.",
+                "Invalid mode. Currently, we only support 'api_scanpy'.",
             )
 
     @property
@@ -188,31 +130,8 @@ class RagAgent:
         self.last_response = []
         if not self.use_prompt:
             return []
-        if self.mode == RagAgentModeEnum.KG:
-            results = self.query_func(user_question, self.n_results)
-            response = [
-                (
-                    result.page_content,
-                    result.metadata,
-                )
-                for result in results
-            ]
-        elif self.mode == RagAgentModeEnum.VectorStore:
-            results = self.query_func(
-                user_question,
-                self.n_results,
-                doc_ids=self.documentids_workspace,
-            )
-            response = [
-                (
-                    result.page_content,
-                    result.metadata,
-                )
-                for result in results
-            ]
-        elif self.mode in [
-            RagAgentModeEnum.API_BLAST,
-            RagAgentModeEnum.API_ONCOKB,
+        if self.mode in [
+            RagAgentModeEnum.API_SCANPI,
         ]:
             final_answer = self.query_func(user_question)
             if final_answer is not None:
@@ -222,7 +141,7 @@ class RagAgent:
 
         else:
             raise ValueError(
-                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', or 'api_oncokb'.",
+                "Invalid mode. Currently, we only support 'api_scanpy'.",
             )
         self.last_response = response
         return response

@@ -55,7 +55,7 @@ class APIAgent:
         self.interpreter = interpreter
         self.final_answer = None
 
-    def execute(self, question: str, data: Any) -> str | None:
+    def execute(self, question: str, data: Any | None = None) -> str | None:
         """Wrapper that uses class methods to execute the API agent logic. Consists
         of 1) query generation, 2) query submission, 3) results fetching, and
         4) answer extraction. The final answer is stored in the final_answer

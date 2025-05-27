@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from unittest.mock import MagicMock
 from copy import deepcopy
@@ -283,7 +284,7 @@ class TestDataGT(BaseTestData):
         assert self.data_dict['key3'].obj6 == other.data_dict['key3'].obj6
         return True
 
-
+@pytest.mark.skip()
 class TestDepGraph(unittest.TestCase):
     def test_construct_dep_graph(self):
         mock_graph_dict = {

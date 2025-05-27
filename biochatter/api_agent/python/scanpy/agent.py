@@ -85,7 +85,7 @@ class ScanpyFetcher(BaseFetcher):
     def fetch_results(
         self,
         execution_graph: list[ExecutionGraph], # Jiahang: we pass a list to follow the interface. Bad practice.
-        data: object,
+        data: object | None = None,
         retries: int | None = 3,
     ) -> object:
         code_lines = []
