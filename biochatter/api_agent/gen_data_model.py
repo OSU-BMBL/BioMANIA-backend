@@ -18,8 +18,6 @@ from pydantic import Field, create_model, PrivateAttr
 from pydantic.fields import FieldInfo
 from importlib.metadata import version
 
-from langchain_core.utils.pydantic import create_model as create_model_v1
-from langchain_core.pydantic_v1 import Field as FieldV1
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
@@ -32,111 +30,7 @@ from datamodel_code_generator import DataModelType, PythonVersion
 from datamodel_code_generator.model import get_data_model_types
 from datamodel_code_generator.parser.jsonschema import JsonSchemaParser
 
-from .base.agent_abc import BaseAPIModel, BaseAPI
-
-# Jiahang: deprecated in the future, replaced by apis_to_data_models
-def generate_pydantic_classes(module: ModuleType) -> list[type[BaseAPIModel]]:
-    """Generate Pydantic classes for each callable.
-
-    For each callable (apition/method) in a given module. Extracts parameters
-    from docstrings using docstring-parser. Each generated class has fields
-    corresponding to the parameters of the apition. If a parameter name
-    conflicts with BaseModel attributes, it is aliased.
-
-    Params:
-    -------
-    module : ModuleType
-        The Python module from which to extract apitions and generate models.
-
-    Returns
-    -------
-    list[Type[BaseModel]]
-        A list of Pydantic model classes corresponding to each apition found in
-            `module`.
-
-    Notes
-    -----
-    - For now, all parameter types are set to `Any` to avoid complications with
-      complex or external classes that are not easily JSON-serializable.
-    - Optional parameters (those with a None default) are represented as
-      `Optional[Any]`.
-    - Required parameters (no default) use `...` to indicate that the field is
-      required.
-
-    """
-    base_attributes = set(dir(BaseAPIModel))
-    classes_list = []
-
-    for name, api in inspect.getmembers(module, inspect.isapition):
-        # Skip private/internal apitions (e.g., _something)
-        if name.startswith("_"):
-            continue
-
-        # Parse docstring for parameter descriptions
-        doc = inspect.getdoc(api) or ""
-        parsed_doc = parse(doc)
-        doc_params = {p.arg_name: p.description or "No description available." for p in parsed_doc.params}
-
-        sig = inspect.signature(api)
-        fields = {}
-
-        for param_name, param in sig.parameters.items():
-            # Skip *args and **kwargs for now
-            if param_name in ("args", "kwargs"):
-                continue
-
-            # Fetch docstring description or fallback
-            description = doc_params.get(param_name, "No description available.")
-
-            # Determine default value
-            # If no default, we use `...` indicating a required field
-            if param.default is not inspect.Parameter.empty:
-                default_value = param.default
-
-                # Convert MappingProxyType to a dict for JSON compatibility
-                if isinstance(default_value, MappingProxyType):
-                    default_value = dict(default_value)
-
-                # Handle non-JSON-compliant float values by converting to string
-                if default_value in [float("inf"), float("-inf"), float("nan"), float("-nan")]:
-                    default_value = str(default_value)
-            else:
-                default_value = ...  # No default means required
-
-            # For now, all parameter types are Any
-            annotation = Any
-
-            # Append the original annotation as a note in the description if
-            # available
-            if param.annotation is not inspect.Parameter.empty:
-                description += f"\nOriginal type annotation: {param.annotation}"
-
-            # If default_value is None, parameter can be Optional
-            # If not required, mark as Optional[Any]
-            if default_value is None:
-                annotation = Any | None
-
-            # Prepare field kwargs
-            field_kwargs = {"description": description, "default": default_value}
-
-            # If field name conflicts with BaseModel attributes, alias it
-            field_name = param_name
-            if param_name in base_attributes:
-                alias_name = param_name + "_param"
-                field_kwargs["alias"] = param_name
-                field_name = alias_name
-
-            fields[field_name] = (annotation, FieldV1(**field_kwargs))
-
-        # Create the Pydantic model
-
-        tl_parameters_model = create_model_v1(
-            name,
-            **fields,
-            __base__=BaseAPIModel,
-        )
-        classes_list.append(tl_parameters_model)
-    return classes_list
+from .base.agent_abc import BaseAPI
 
 def get_api_path(module: ModuleType, api: Callable) -> str:
     """Get the path of an API.
@@ -185,7 +79,7 @@ def get_info_import_path(package: ModuleType, object_name: str) -> str:
     import_path = f"biochatter.api_agent.python.{package_name}.info_hub.{object_name}"
     return import_path
     
-def data_model_to_py(data_model: type[BaseAPIModel], additional_imports: list[str], need_import: bool) -> str:
+def data_model_to_py(data_model: type[BaseAPI], additional_imports: list[str], need_import: bool) -> str:
     """Convert a Pydantic model to a Python code.
     """
     json_schema = json.dumps(data_model.model_json_schema())
@@ -209,10 +103,12 @@ def data_model_to_py(data_model: type[BaseAPIModel], additional_imports: list[st
     module = cst.parse_module(codes)
 
     class DataModelTransformer(cst.CSTTransformer):
-        def __init__(self, data_model: type[BaseAPIModel], need_import: bool):
+        def __init__(self, data_model: type[BaseAPI], need_import: bool):
             self.data_model = data_model
             self.need_import = need_import
             self.doc = inspect.getdoc(data_model)
+            if self.doc is None:
+                self.doc = "No description available."
             self.doc = '\n    '.join(self.doc.strip().splitlines())
             self.doc = self.doc.replace('\\', '\\\\')
 
@@ -220,7 +116,7 @@ def data_model_to_py(data_model: type[BaseAPIModel], additional_imports: list[st
             # Remove model_config
             if isinstance(original_node.targets[0].target, cst.Name) and \
                 original_node.targets[0].target.value == "model_config":
-                return cst.RemovalSentinel.REMOVE
+                return cst.RemovalSentinel.REMOVE # type: ignore[return-value]
             return updated_node
 
         def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
@@ -237,9 +133,12 @@ def data_model_to_py(data_model: type[BaseAPIModel], additional_imports: list[st
 
                 private_attrs.append(
                     cst.SimpleStatementLine([
-                        cst.Assign(
-                            targets=[cst.AssignTarget(cst.Name(key))],
+                        cst.AnnAssign(
+                            target=cst.Name(key),
                             value=call,
+                            annotation=cst.Annotation(
+                                cst.Name("str")
+                            )
                         )
                     ])
                 )
@@ -267,8 +166,13 @@ def data_model_to_py(data_model: type[BaseAPIModel], additional_imports: list[st
     # Apply the transformer
     transformer = DataModelTransformer(data_model, need_import)
     modified_module = module.visit(transformer)
+    codes = modified_module.code
+
+    # hack: replace _products_original: str = to _products_original: list[str] = 
+    # since libcst not support list[str] in the type annotation.
+    codes = re.sub(r'_products_original\s*:\s*str', '_products_original: list[str]', codes)
     
-    return modified_module.code
+    return codes
 
 def simplify_desc(
     fields: dict[str, tuple[type, FieldInfo] | str], 
@@ -278,7 +182,7 @@ def simplify_desc(
     """
     _fields = {field_name: str for field_name in fields.keys()}
     output_format = create_model(
-        "OutputFormat", **_fields,
+        "OutputFormat", **_fields,  # type: ignore
     )
     desc = {}
     for key, value in fields.items():
@@ -327,7 +231,7 @@ def simplify_desc(
 
     return fields
 
-def add_tools_dict(codes: str, data_models: list[type[BaseAPIModel]]) -> str:
+def add_tools_dict(codes: str, data_models: list[type[BaseAPI]]) -> str:
     """Add TOOLS_DICT to the end of the code using libcst.
     
     Args:
@@ -342,7 +246,7 @@ def add_tools_dict(codes: str, data_models: list[type[BaseAPIModel]]) -> str:
     
     # Create a transformer to add the TOOLS dictionary
     class AddToolsTransformer(cst.CSTTransformer):
-        def __init__(self, data_models: list[type[BaseAPIModel]]):
+        def __init__(self, data_models: list[type[BaseAPI]]):
             self.data_models = data_models
             
         def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
@@ -399,7 +303,7 @@ def remove_tools_dict(codes: str) -> str:
 def apis_to_data_models(
         api_dict: str, 
         need_import: bool = True,
-        ) -> list[type[BaseAPIModel]]:
+        ) -> list[type[BaseAPI]]:
     """
     Although we have many string operations like hack in this implementation, all these hacks are bound to
     specific version of datamodel_code_generator and pydantic. They are not bound to any specific package, module
@@ -410,7 +314,7 @@ def apis_to_data_models(
         "are based on the outputs of this package. Different versions may lead to different outputs " \
         "and thus invalidate those fine-grained operations."
     
-    base_attributes = set(dir(BaseAPIModel))
+    base_attributes = set(dir(BaseAPI))
     classes_list = []
     codes_list = []
     api_list = api_dict['api_list']
@@ -579,7 +483,7 @@ if __name__ == "__main__":
     # released by black. the so-called internal API is unstable, and this
     # subprocess usage is recommended.
 
-    # code formatting by black.
+    # code formatted by black.
 
     subprocess.run(["black", output_path])
 
