@@ -172,7 +172,7 @@ class RagAgent:
             self.query_func = self.agent.execute        
         else:
             raise ValueError(
-                "Invalid mode. Currently, we only support 'api_scanpy'.",
+                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', 'api_oncokb' or 'api_scanpy'.",
             )
 
     @property
@@ -239,7 +239,7 @@ class RagAgent:
 
         else:
             raise ValueError(
-                "Invalid mode. Currently, we only support 'api_scanpy'.",
+                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', 'api_oncokb' or 'api_scanpy'.",
             )
         self.last_response = response
         return response
