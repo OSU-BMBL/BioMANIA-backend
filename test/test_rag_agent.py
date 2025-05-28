@@ -26,7 +26,7 @@ def test_rag_agent_invalid_mode():
             model_name="test_model",
             connection_args={},
         )
-    assert "Invalid mode. Currently, we only support 'api_scanpy'." in str(excinfo.value)
+    assert "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', 'api_oncokb' or 'api_scanpy'." in str(excinfo.value)
 
 
 def conversation_factory():
