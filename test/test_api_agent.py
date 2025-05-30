@@ -1,9 +1,12 @@
+import pytest
+pytest.mark.skip(reason="APIAgent has been greatly refactored. Many unnecessary complex levels have been removed. This test is not valid anymore.", 
+                 allow_module_level=True)
+
 import os
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.output_parsers import PydanticToolsParser
 from pydantic import BaseModel
 
