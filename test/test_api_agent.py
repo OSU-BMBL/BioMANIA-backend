@@ -112,7 +112,7 @@ def test_agent(query_builder, fetcher, interpreter):
         interpreter=interpreter,
     )
 
-@pytest.mark.skip()
+
 class TestAPIAgent:
     def test_parameterise_query(self, test_agent):
         result = test_agent.build_api_query("Mock question")
@@ -144,13 +144,13 @@ class TestBlastQueryBuilder:
         # Act
         result = builder.create_runnable(
             query_parameters=query_parameters,
-            conversation=None,
+            llm=None,
         )
 
         # Assert
         mock_create_runnable.assert_called_once_with(
             query_parameters=query_parameters,
-            conversation=None,
+            llm=None,
         )
         assert result == mock_runnable
 

@@ -1,7 +1,5 @@
-import pytest
 from biochatter.api_agent.gen_data_model import apis_to_data_models
 
-@pytest.mark.skip()
 def test_generated_data_model():
     file_name = "biochatter/api_agent/python/scanpy/tmp_tl.py"
     import scanpy as sc
