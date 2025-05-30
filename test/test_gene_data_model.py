@@ -1,7 +1,3 @@
-import pytest
-pytest.mark.skip(reason="Auto generating data model has been refactored. This test is not valid anymore.", 
-                 allow_module_level=True)
-
 from biochatter.api_agent.gen_data_model import apis_to_data_models
 
 def test_generated_data_model():

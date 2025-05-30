@@ -1,7 +1,3 @@
-import pytest
-pytest.mark.skip(reason="APIAgent inside RagAgent has been greatly refactored. This test is not valid anymore.", 
-                 allow_module_level=True)
-
 import json
 import os
 from unittest.mock import MagicMock, patch
