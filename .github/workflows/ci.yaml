@@ -18,18 +18,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.11.11
 
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.7.1 python3 -
+          curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.1.1 python3 -
           
       - name: Install dependencies
         run: poetry install --all-extras
 
       - name: Run tests and generate coverage report
         run: |
-          poetry run pytest --cov=biochatter --cov-report=xml test --ignore=./volumes
+          poetry run pytest --cov=biochatter --cov-report=xml test --ignore=./volumes --ignore=test/outdated
           poetry run coverage report
         shell: bash
 
