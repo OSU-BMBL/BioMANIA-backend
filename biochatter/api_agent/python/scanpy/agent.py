@@ -84,8 +84,8 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
 class ScanpyFetcher(BaseFetcher):
     def fetch_results(
         self,
-        execution_graph: list[ExecutionGraph], # Jiahang (TODO): we pass a list to follow the interface. Bad practice.
-        data: object,
+        execution_graph: list[ExecutionGraph],
+        data: object | None = None, # Jiahang (TODO): we pass a list to follow the interface. Bad practice.
         retries: int | None = 3,
     ) -> object:
         code_lines = []

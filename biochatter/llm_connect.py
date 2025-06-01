@@ -1509,9 +1509,14 @@ class GptConversation(Conversation):
             if user == "community":
                 self.usage_stats = get_stats(user=user)
 
+            self.chat.generate([[HumanMessage(content="Hello")]])
             return True
 
         except openai._exceptions.AuthenticationError:
+            self._chat = None
+            self._ca_chat = None
+            return False
+        except Exception as e:
             self._chat = None
             self._ca_chat = None
             return False

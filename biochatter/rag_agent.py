@@ -10,6 +10,7 @@ class RagAgentModeEnum:
     KG = "kg"
     API_BLAST = "api_blast"
     API_ONCOKB = "api_oncokb"
+    API_SCANPI = "api_scanpy"
 
 
 class RagAgent:
@@ -80,6 +81,7 @@ class RagAgent:
         self.documentids_workspace = documentids_workspace
         self.last_response = []
         self._agent_desc = agent_desc
+
         if self.mode == RagAgentModeEnum.KG:
             from .database_agent import DatabaseAgent
 
@@ -154,9 +156,23 @@ class RagAgent:
                 interpreter=OncoKBInterpreter(),
             )
             self.query_func = self.agent.execute
+        elif self.mode == RagAgentModeEnum.API_SCANPI:
+            from .api_agent.base.api_agent import APIAgent
+            from .api_agent.python.scanpy.agent import (
+                ScanpyFetcher,
+                ScanpyInterpreter,
+                ScanpyQueryBuilder,
+            )
+            conversation = conversation_factory()
+            self.agent = APIAgent(
+                query_builder=ScanpyQueryBuilder(conversation),
+                fetcher=ScanpyFetcher(conversation),
+                interpreter=ScanpyInterpreter(conversation),
+            )
+            self.query_func = self.agent.execute        
         else:
             raise ValueError(
-                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', or 'api_oncokb'.",
+                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', 'api_oncokb' or 'api_scanpy'.",
             )
 
     @property
@@ -213,6 +229,7 @@ class RagAgent:
         elif self.mode in [
             RagAgentModeEnum.API_BLAST,
             RagAgentModeEnum.API_ONCOKB,
+            RagAgentModeEnum.API_SCANPI,
         ]:
             final_answer = self.query_func(user_question)
             if final_answer is not None:
@@ -222,7 +239,7 @@ class RagAgent:
 
         else:
             raise ValueError(
-                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', or 'api_oncokb'.",
+                "Invalid mode. Choose either 'kg', 'vectorstore', 'api_blast', 'api_oncokb' or 'api_scanpy'.",
             )
         self.last_response = response
         return response

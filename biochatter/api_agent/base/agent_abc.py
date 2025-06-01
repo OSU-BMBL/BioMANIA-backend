@@ -22,7 +22,7 @@ class BaseQueryBuilder(ABC):
     def __init__(self, conversation: Conversation):
         """Initialise the query builder with a conversation object."""
         self.conversation = conversation
-
+        
         load_dotenv()
         self.conversation.set_api_key(
             os.environ.get("API_KEY")
@@ -114,7 +114,6 @@ class BaseInterpreter(ABC):
     def __init__(self, conversation: Conversation):
         """Initialise the interpreter with a conversation object."""
         self.conversation = conversation
-
         load_dotenv()
         self.conversation.set_api_key(
             os.environ.get("API_KEY")
