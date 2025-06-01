@@ -57,10 +57,10 @@ TOKEN_LIMITS = {
 }
 
 
-# Jiahang: it's a bad practice to put LLM initialization in `set_api_key` method,
+# Jiahang (TODO): it's a bad practice to put LLM initialization in `set_api_key` method,
 # since the method name is not related to LLM initialization.
 #
-# Jiahang: it's unnecessary to define chat, ca_chat in so many ways. We should make it
+# Jiahang (TODO): it's unnecessary to define chat, ca_chat in so many ways. We should make it
 # unified and simple.
 class Conversation(ABC):
     """Use this class to set up a connection to an LLM API.

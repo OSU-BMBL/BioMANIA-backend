@@ -2,7 +2,7 @@ from copy import deepcopy
 import ast
 from typing import Any
 
-from biochatter.api_agent.base.agent_abc import BaseDependency, BaseAPI, BaseData, BaseKeysInfo, InputAPI, InputDependency   
+from biochatter.api_agent.base.agent_abc import BaseDependency, BaseAPI, BaseData, BaseKeysInfo
 
 def _retrieve_data(src_data: Any, src_keys_info: BaseKeysInfo, dst_keys_info: BaseKeysInfo):
     """retrieval: if a src key is not in dst keys, then its corresponding data is deleted"""
@@ -106,7 +106,7 @@ def retrieve_products(src_api: BaseAPI, dep: BaseDependency) -> BaseDependency:
     and assign the retrieved products to self.deps
     
     Note that the deps.keys_info must be a subset of src_api._products.keys_info.
-    (Jiahang: this should be asserted in the future)
+    (Jiahang (TODO): this should be asserted in the future)
 
     For now the retrieval is conducted by removing unneeded objects from src_api._products.data.
     However, I (Jiahang) personally think it's a bit tricky and unsafe.
@@ -149,14 +149,14 @@ def aggregate_deps(deps: list[BaseDependency], dst_api: BaseAPI) -> BaseAPI:
 def is_active_dep(dep: BaseDependency, api: BaseAPI) -> bool:
     """Check if the dependency is active by the target api."""
     dep_args = dep.args
-    e_arg_name = list(dep_args.keys())[0] # Jiahang: only one edge required arg being considered for now
+    e_arg_name = list(dep_args.keys())[0] # Jiahang (TODO): only one edge required arg being considered for now
     e_arg_val = dep_args[e_arg_name]
     if e_arg_name in api.model_fields.keys() and getattr(api, e_arg_name) == e_arg_val:
         return True
     return False
 
 def read_apis_from_graph_dict(api_names: list[str], tools_dict: dict) -> dict[str, BaseAPI]:
-    """Jiahang: this function is pretty complicated. Documents need to be carefully revised with
+    """Jiahang (TODO): this function is pretty complicated. Documents need to be carefully revised with
     sufficient examples."""
 
     apis = {}
@@ -168,7 +168,7 @@ def read_apis_from_graph_dict(api_names: list[str], tools_dict: dict) -> dict[st
 
 def read_deps_from_graph_dict(dependencies: list[(str, str)], dep_class: BaseDependency) -> dict[str, BaseDependency]:
 
-    """Jiahang: this function is pretty complicated. Documents need to be carefully revised with
+    """Jiahang (TODO): this function is pretty complicated. Documents need to be carefully revised with
     sufficient examples."""
 
     deps = {}

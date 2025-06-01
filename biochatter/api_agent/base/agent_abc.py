@@ -150,7 +150,7 @@ class BaseInterpreter(ABC):
         """
 
 
-# Jiahang: deprecated, replaced by BaseAPI
+# Jiahang (TODO): deprecated, replaced by BaseAPI
 class BaseAPIModel(BaseModel):
     """A base class for all API models.
 
@@ -248,7 +248,7 @@ class BaseData(BaseObject):
 
     def _hash_members(self) -> dict:
         members = self.model_dump()
-        members.pop('data') # Jiahang: data can be complex structure not hashable, so we don't consider it for now.
+        members.pop('data') # Jiahang (TODO): data can be complex structure not hashable, so we don't consider it for now.
         return members
 
 
@@ -276,7 +276,7 @@ def _ast_to_keys_info(
             }
         )
     
-    Jiahang: this function is pretty complicated. Documents need to be carefully revised with
+    Jiahang (TODO): this function is pretty complicated. Documents need to be carefully revised with
     sufficient examples.
     """
     if child_name is None or child_keys_info is None:
@@ -301,7 +301,7 @@ def _ast_to_keys_info(
             
         elif isinstance(product, ast.Subscript):
             # Handle subscript access (e.g., ['key'])
-            # Jiahang: this assert should be put in field validator of InputAPI
+            # Jiahang (TODO): this assert should be put in field validator of InputAPI
             assert isinstance(product.slice, ast.Constant), "Only constant subscript is supported for now."
             name = product.slice.value
             keys_info: BaseKeysInfo = BaseKeysInfo(
@@ -369,7 +369,7 @@ def _combine_keys_info(src: BaseKeysInfo, dst: BaseKeysInfo) -> BaseKeysInfo:
             }
         )
 
-    Jiahang: this function is pretty complicated. Documents need to be carefully revised with
+    Jiahang (TODO): this function is pretty complicated. Documents need to be carefully revised with
     sufficient examples.
     """ 
     dst_keys = deepcopy(dst.keys)
@@ -413,7 +413,7 @@ def _str_list_to_keys_info(str_list: list[str]) -> BaseKeysInfo:
         }
     )
 
-    Jiahang: this function is pretty complicated. Documents need to be carefully revised with
+    Jiahang (TODO): this function is pretty complicated. Documents need to be carefully revised with
     sufficient examples.
     """
     keys_info_list = []
@@ -435,24 +435,24 @@ def _str_list_to_keys_info(str_list: list[str]) -> BaseKeysInfo:
     
     return result
 
-# Jiahang: BaseAPI and BaseDependency should have all members as required.
+# Jiahang (TODO): BaseAPI and BaseDependency should have all members as required.
 class BaseAPI(BaseObject):
     """Base class for all API models.
     
     We use PrivateAttr to store api_name and products to avoid them being
     included in the argument prediction of LLM through langchain.
 
-    Jiahang: in these classes, some data members should not be set in initialization.
+    Jiahang (TODO): in these classes, some data members should not be set in initialization.
     Instead, they should only be set dynamically during forward pass over execution graph,
     which is conducted internally. Please implement relevant validator to ensure this.
 
-    Jiahang: we predefine the data name to be "data" for all APIs. This is because we assume
+    Jiahang (TODO): we predefine the data name to be "data" for all APIs. This is because we assume
     all input data should be stored in one data object. Even if there are multiple data objects, they
     can all be stored in the same data object through ways like dict or list. This also means that 
     the variable name "data" should not be overlapped. This is one of the standards.
     """
 
-    # Jiahang: revise below
+    # Jiahang (TODO): revise below
     # these members should be set in class definition.
     _api_name: str = PrivateAttr(default="")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -491,7 +491,7 @@ class BaseAPI(BaseObject):
         api_calling = self.to_api_calling()
         state["data"] = deepcopy(self._deps.data)
         results, error = run_codes(api_calling, state)
-        if error:# Jiahang: error handling and multiple retry are not implemented yet.
+        if error:# Jiahang (TODO): error handling and multiple retry are not implemented yet.
             raise ValueError(error)
         else:
             self._products.data = state["data"]
@@ -503,7 +503,7 @@ class BaseAPI(BaseObject):
         Assuming the API is instantiated and parametrised, this method is to complete the API
         with other information, such as _products.keys_info.
 
-        Jiahang: not employed yet.
+        Jiahang (TODO): not employed yet.
         """
         self._products = BaseData(
             keys_info=_str_list_to_keys_info(self._products_original)
@@ -517,7 +517,7 @@ class ROOT(BaseAPI):
         self._products.data = deepcopy(self._deps.data)
         return None, "ROOT()"
 
-# Jiahang: we should elaborate in doc why BaseAPI use private attr but BaseDependency use field.
+# Jiahang (TODO): we should elaborate in doc why BaseAPI use private attr but BaseDependency use field.
 class BaseDependency(BaseObject):
     """A class representing an edge in the dependency graph.
 
@@ -556,7 +556,7 @@ class BaseDependency(BaseObject):
         else:
             raise ValueError("Dependency graph dict is not set.")
 
-
+# Jiahang (TODO): uselss, deprecated in the future.
 class InputAPI(BaseObject):
     """A class representing an input API.
     
@@ -577,7 +577,7 @@ class InputAPI(BaseObject):
             product = ast.parse(product)
             assert len(product.body) == 1, "Each product should be a single data object."
 
-            # Jiahang: this assert needs to be carefully considered
+            # Jiahang (TODO): this assert needs to be carefully considered
             assert isinstance(product.body[0], ast.Expr) and \
                 not isinstance(product.body[0].value, ast.Constant), \
                 "Each product should be an variable. " \

@@ -83,7 +83,7 @@ pp_api_dict = {
         "data_name": "adata"
 	},
     # unfinished: n_cells and n_genes are not guaranteed to be generated.
-    # Jiahang: after all these noded being added, how to determine upstream dependencies?
+    # Jiahang (TODO): after all these noded being added, how to determine upstream dependencies?
     "sc.pp.filter_cells":
     {
         "api": sc.pp.filter_cells,
@@ -154,7 +154,7 @@ pp_api_dict = {
         "_deprecated": True,
         "_comment": "recipe* API are not guaranteed to work."
     },
-    # Jiahang: how this works?
+    # Jiahang (TODO): how this works?
     "sc.pp.combat":
     {
         "api": sc.pp.combat,
@@ -163,7 +163,7 @@ pp_api_dict = {
 		],
 		"data_name": "adata"
     },
-    # Jiahang: how to deal with multi-inputs?
+    # Jiahang (TODO): how to deal with multi-inputs?
     "sc.pp.scrublet":
     {
         "api": sc.pp.scrublet,
@@ -260,7 +260,7 @@ tl_api_dict = {
 		],
 		"data_name": "adata"
 	},
-    # Jiahang: this case is complex, leave it for now.
+    # Jiahang (TODO): this case is complex, leave it for now.
     "sc.tl.ingest":
     {
         "api": sc.tl.ingest,
@@ -300,13 +300,13 @@ tl_api_dict = {
         ],
         "data_name": "adata"
     },
-    # Jiahang: special case, this API has no data argument.
+    # Jiahang (TODO): special case, this API has no data argument.
     "sc.tl.sim":
     {
         "api": sc.tl.sim,
         "_deprecated": True,
 	},
-    # Jiahang: dynamic return values.
+    # Jiahang (TODO): dynamic return values.
     "sc.tl.draw_graph":
     {
         "api": sc.tl.draw_graph,
@@ -517,7 +517,7 @@ pl_api_dict = {
         "_deprecated": True,
         "_comment": "document is too poor"
 	},
-    # Jiahang: poor doc
+    # Jiahang (TODO): poor doc
     "sc.pl.draw_graph":
     {
         "api": sc.pl.draw_graph,
@@ -541,11 +541,6 @@ pl_api_dict = {
 pp = pp_api_dict
 tl = tl_api_dict
 pl = pl_api_dict
-
-META = {
-    "root_module_name": "sc",
-    "root_module": sc,
-}
 
 FULL_API_DICT = {
     **pp,

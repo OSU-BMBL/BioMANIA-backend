@@ -43,7 +43,7 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
     ):
         llm_with_tools: BaseChatModel = self.conversation.chat.bind_tools(tools, tool_choice="required")
         parser = PydanticToolsParser(tools=tools)
-        # Jiahang: only one target API being considered for now
+        # Jiahang (TODO): only one target API being considered for now
         # can we somehow restrict LLM to predict only one API?
         # Jiahang (random note): I found openai llm n -> 1 and temperature -> 0.0,
         # hindering majority vote and revising incorrect results through multiple trials.
@@ -69,7 +69,7 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
             api = next_api_queue.get()
             for in_dep in self.dep_graph.in_deps(api._api_name):
                 if is_active_dep(in_dep, api):
-                    # Jiahang: note that the api (node) names of execution graph is a primary key.
+                    # Jiahang (TODO): note that the api (node) names of execution graph is a primary key.
                     # It is worth considering whether multiple predecessors of the same API could be added.
                     # That means, the same API with different arguments may occur in the final API chain.
                     # For now, we only allow a single instance of each API.
@@ -84,7 +84,7 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
 class ScanpyFetcher(BaseFetcher):
     def fetch_results(
         self,
-        execution_graph: list[ExecutionGraph], # Jiahang: we pass a list to follow the interface. Bad practice.
+        execution_graph: list[ExecutionGraph], # Jiahang (TODO): we pass a list to follow the interface. Bad practice.
         data: object,
         retries: int | None = 3,
     ) -> object:
@@ -114,7 +114,7 @@ class ScanpyFetcher(BaseFetcher):
             for out_dep in out_deps:
                 out_dep = retrieve_products(api, out_dep)
                 execution_graph.update_dep(out_dep)
-        print('\n'.join(code_lines)) # Jiahang: using logger to do the printing.
+        print('\n'.join(code_lines)) # Jiahang (TODO): using logger to do the printing.
         return api._products.data
     
 class ScanpyInterpreter(BaseInterpreter):
@@ -123,5 +123,5 @@ class ScanpyInterpreter(BaseInterpreter):
         question: str,
         response: object,
     ) -> str:
-        # Jiahang: no need to summarise the results for Scanpy.
+        # Jiahang (TODO): no need to summarise the results for Scanpy.
         return response

@@ -4,7 +4,7 @@ from pydantic import BaseModel, PrivateAttr, Field, model_validator
 from biochatter.api_agent.base.agent_abc import BaseAPI
 from .base import ScanpyAPI
 
-# Jiahang: unfinished
+# Jiahang (TODO): unfinished
 class ScPpNeighbors(ScanpyAPI):
     """Compute the nearest neighbors distance matrix and a neighborhood graph of observations."""
 
@@ -113,7 +113,7 @@ class ScPpHighlyVariableGenes(ScanpyAPI):
         "seurat", description="The method to use for identifying highly variable genes."
     )
     subset: bool = Field(False, description="If True, subset to highly-variable genes, otherwise just indicate them.")
-    # Jiahang: predict to be False...
+    # Jiahang (TODO): predict to be False...
     inplace: bool = Field(True, description="Whether to place calculated metrics in .var or return them.")
     batch_key: str | None = Field(
         None, description="If specified, highly-variable genes are selected separately within each batch and merged."
