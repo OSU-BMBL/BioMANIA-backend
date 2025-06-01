@@ -24,7 +24,7 @@ scanpy_agent = APIAgent(
         conversation=query_builder_conv,
     ),
     fetcher=ScanpyFetcher(),
-    interpreter=ScanpyInterpreter( # Jiahang: explain codes, args, etc. see biomania.
+    interpreter=ScanpyInterpreter( # Jiahang (TODO): explain codes, args, etc. see biomania.
         conversation=interpreter_conv,
     )
 )

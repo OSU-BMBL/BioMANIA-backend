@@ -310,7 +310,7 @@ class ScPlTsne(ScanpyAPI):
     #     default=None,
     #     description="Additional arguments passed to `matplotlib.pyplot.scatter()`.",
     # )
-    # Jiahang: kwargs that being sent to internal API are not supported now since it needs
+    # Jiahang (TODO): kwargs that being sent to internal API are not supported now since it needs
     # to be carefully handled and the handling way should be a standard.
 
 

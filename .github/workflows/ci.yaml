@@ -15,17 +15,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.11
-
+        
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.1.1 python3 -
-          
-      - name: Install dependencies
-        run: poetry install --all-extras
+
+      - name: Set up Python and Poetry
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.11
+          cache: poetry
+      - run: poetry install --all-extras
 
       - name: Run tests and generate coverage report
         run: |

@@ -22,7 +22,7 @@ from .agent_abc import BaseFetcher, BaseInterpreter, BaseQueryBuilder
 
 ## Agent class
 
-# Jiahang: if only the conversation.chat, the LLM, is used, then it's a bad practice to pass the
+# Jiahang (TODO): if only the conversation.chat, the LLM, is used, then it's a bad practice to pass the
 # whole conversation object. Instead, we should pass the LLM only.
 # This problem applies to other API agents, query_buider, fecther, interpreter classes as well.
 class APIAgent:

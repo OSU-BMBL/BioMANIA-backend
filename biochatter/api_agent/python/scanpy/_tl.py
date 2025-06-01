@@ -3,8 +3,8 @@ from pydantic import PrivateAttr, Field
 from biochatter.api_agent.base.agent_abc import BaseAPI
 from .base import ScanpyAPI
 
-# Jiahang: how to help developers identify which arguments are useful?
-# Jiahang: unfinished arguments. which should be used?
+# Jiahang (TODO): how to help developers identify which arguments are useful?
+# Jiahang (TODO): unfinished arguments. which should be used?
 class ScTlUmap(ScanpyAPI):
     """Embed the neighborhood graph using UMAP."""
 
@@ -50,7 +50,7 @@ class ScTlDiffMap(ScanpyAPI):
         "data",
         description="Annotated data matrix",
     ),
-    # Jiahang: predict to be 2...
+    # Jiahang (TODO): predict to be 2...
     n_comps: int = Field(
         15,
         description="The number of dimensions of the representation.",

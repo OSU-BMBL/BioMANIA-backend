@@ -343,7 +343,7 @@ def apis_to_data_models(
             # Append the original annotation as a note in the description if
             # available
             if param.annotation is not inspect.Parameter.empty:
-                # Jiahang(TODO): this is not needed, since all predicted types should be
+                # Jiahang (TODO): this is not needed, since all predicted types should be
                 # basic types.
                 description += f"\nOriginal type annotation: {param.annotation}"
 
@@ -448,7 +448,7 @@ if __name__ == "__main__":
     with open(output_path, "w") as f:
         f.write(codes)
 
-    # Jiahang: use subprocess is a bad practice. but there is no public api
+    # Jiahang (TODO): use subprocess is a bad practice. but there is no public api
     # released by black. the so-called internal API is unstable, and this
     # subprocess usage is recommended.
 
