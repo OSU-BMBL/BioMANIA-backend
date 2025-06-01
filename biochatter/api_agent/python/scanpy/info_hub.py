@@ -2,6 +2,8 @@
 This file import all external data required by the current package.
 """
 import json
+import importlib
+
 _dep_graph_path = "biochatter/api_agent/python/scanpy/graph.json"
 with open(_dep_graph_path, 'r') as f:
     dep_graph_dict = json.load(f)
@@ -38,7 +40,16 @@ def preprocess_dep_graph_dict(dep_graph_dict: dict) -> dict:
 
     return dep_graph_dict
 
-# Jiahang: two dependencies representations different, one is a:b, another is (a, b), should be unified.
+# Jiahang (TODO): two dependencies representations different, one is a:b, another is (a, b), should be unified.
 dep_graph_dict = preprocess_dep_graph_dict(dep_graph_dict)
 api_names = [node["api"] for node in dep_graph_dict["nodes"]]
 dependencies = [(edge["source"], edge["target"]) for edge in dep_graph_dict["edges"]]
+
+
+PKGS = {
+    'sc': importlib.import_module('scanpy'),
+}
+
+DATA = {
+    'data': importlib.import_module('scanpy').datasets.krumsiek11()
+}

@@ -6,6 +6,9 @@ from biochatter.api_agent.base.utils import run_codes
 import importlib
 from pydantic import BaseModel
 
+from copy import deepcopy
+
+# Jiahang (TODO): check whether constants are properly set up in API.
 
 # builtin API.
 # all args of builtin API are positional args, so no arg name is needed.
@@ -17,7 +20,6 @@ BUILTIN = 0
 NO_FIRST_ARG_NAME = 1
 
 API_CALLING = """{api_name}({args})"""
-AVAILABLE_STATES = ['scanpy', 'squidpy']
 
 class CodeHistory(BaseModel):
     """
@@ -87,27 +89,8 @@ def unify_bool(input_: object, type_: str):
             return False
     return input_
 
-# API and arg info class
-class BaseInfo(ABC):
-    """
-    Base class for API, arg and API-arg combination information.
-    """
-    def __init__(self):
-        super().__init__()
-
-    @abstractmethod
-    def __eq__(self, other):
-        ...
-
-    @abstractmethod
-    def __repr__(self):
-        ...
-
-    @abstractmethod
-    def __hash__(self):
-        ...
-    
-class ArgInfo(BaseInfo):
+# Jiahang (TODO): check if this class is similar to other use cases.
+class ArgInfo(ABC):
     """
     Storing basic argument information. For now only name and value.
     """
@@ -142,37 +125,34 @@ class ArgInfo(BaseInfo):
             return f"{self.arg_name} = {arg_val}" if arg_val is not None else f"{self.arg_name} = None"
         return f"{arg_val}" if arg_val is not None else "None"
 
-def set_state(state_name: str) -> dict:
-    assert state_name in AVAILABLE_STATES, f"State name {state_name} is not in {AVAILABLE_STATES}."
-    if state_name == 'scanpy':
-        state = {
-            'sc': importlib.import_module('scanpy'),
-            'adata': importlib.import_module('scanpy').datasets.pbmc3k()
-        }
-    elif state_name == 'squidpy':
-        state = {
-            'sc': importlib.import_module('squidpy'),
-            'sq': importlib.import_module('squidpy'),
-            'adata': importlib.import_module('squidpy').datasets.imc()
-        }
+# Jiahang (TODO): this class should be used by other modules, at least all codes using `run_codes`.
+# Note that, the concept of state here is different from the state in BaseAPI. This is a bad practice.
+# Here, `state` includes `pkgs` and `data`. In BaseAPI, `state` is only `pkgs`.
+# We should change `state` concept in BaseAPI to `pkgs`.
+class State:
+    def __init__(self, pkgs: dict, data: dict):
+        self._pkgs = pkgs
+        self._data = data
+        self._data_names = list(data.keys())
+        self.state = {}
+        self.reset_state()
+        
+    def reset_state(self):
+        self.state.clear()
+        self.state.update(self._pkgs)
+        data = deepcopy(self._data)
+        self.state.update(data)
+    
+    @classmethod
+    def copy_state(cls, state: "State") -> "State":
+        pkgs = state._pkgs
+        data = {}
+        for name in state._data_names:
+            data[name] = deepcopy(state.state[name])
+        new_state = cls(pkgs, data)
+        return new_state
 
-    return state
-
-def copy_state(state_name: str, state: dict) -> dict:
-    assert state_name in AVAILABLE_STATES, f"State name {state_name} is not in {AVAILABLE_STATES}."
-    if state_name == 'scanpy':
-        new_state = {
-            'sc': state['sc'],
-            'adata': state['adata'].copy()
-        }
-    elif state_name == 'squidpy':
-        new_state = {
-            'sc': state['sc'],
-            'sq': state['sq'],
-            'adata': state['adata'].copy()
-        }
-    return new_state
-
+# Jiahang (TODO): this func is used by other modules. Try to unify them.
 def build_API_calling(api: dict) -> str:
     """
     Build the API calling string from the API info.
@@ -217,29 +197,19 @@ class Knockoff:
     If the target API fails, then the deleted API is necessary.
     """
 
-    def __init__(self):
-        self.dep_prods = None
-        self.state_name = None
-        self.state = None
-        self.target_api = None
-        self.code_history = CodeHistory()
-
-    def preprocess(self, dep_prods: list[str], target_api: dict, state_name: str, state: dict):
-        """
-        Set dependency products, state and target API.
-        """
+    def __init__(self, dep_prods: list[str], target_api: dict, state: State):
         self.dep_prods = dep_prods
-        self.state_name = state_name
         self.state = state
         self.target_api = target_api
+        self.code_history = CodeHistory()
         self.code_history.clear()
 
     def clear(self):
-        self.code_history.clear()
         self.dep_prods = None
         self.state = None
         self.target_api = None
-
+        self.code_history.clear()
+        
     @_self_check
     def target_api_call(self):
         """
@@ -263,27 +233,29 @@ class Knockoff:
         However, if the error is raised during the deletion, the knockoff testing is useless.
         Deletion error usually refers to a product is non-existent.
         """
-        output, error = run_codes(knockoff, state=copy_state(self.state_name, self.state))
-        if error is not None:
-            return None
-        return knockoff
+        state = State.copy_state(self.state)
+        output, error = run_codes(knockoff, state=state.state)
+        return knockoff, output, error
         
     @_self_check
     def run_unitary(self):
         nec_prod = []
         for dep_prod in self.dep_prods: # iterate over each dependency product
-            knockoff = self.get_knockoff(dep_prod)
-            if knockoff is None:
+            knockoff, output, error = self.get_knockoff(dep_prod)
+            if error is not None:
                 logger.info(f"Knockoff test failed to built since delete is failed, "
-                            f"usually meaning that the product not exists: {dep_prod}")
+                            f"usually meaning that the product not exists: {dep_prod}.\n"
+                            f"Error: {error}\n"
+                            f"Output: {output}"
+                        )
                 continue
             self.code_history.clear()
             self.code_history.add_code([
                 knockoff,
                 self.target_api_call()
             ])
-            _state = copy_state(self.state_name, self.state)
-            output, error = run_codes(self.code_history.code_history, state=_state)
+            state = State.copy_state(self.state)
+            output, error = run_codes(self.code_history.code_history, state=state.state)
 
             if isinstance(error, Exception):
                 logger.info(f"Knockoff test on {dep_prod} failed: {output}\n"

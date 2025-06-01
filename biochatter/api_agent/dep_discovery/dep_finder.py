@@ -1,79 +1,54 @@
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import Literal
-from importlib import import_module
+import os
+import importlib
 import networkx as nx
 import libcst as cst
+import json
+from ast import literal_eval
 
-from .utils import set_state, build_API_calling, Knockoff, CodeHistory
+from .utils import State, build_API_calling, Knockoff, CodeHistory
 from biochatter.api_agent.base.utils import run_codes
 
+# Jiahang (TODO): logs are too messy. developers may find it hard to debug according to logs.
+# Jiahang (TODO): knockoff error for dependency discovery and real errors are mixing.
 class DependencyFinder:
     MAX_CNT = 3
     SEP_LINE = "-" * 40
-    # Jiahang: remove these constants.
-    _START_EACH_CHAIN = 0
-    _FINISH_OBJ_DEP_EACH_CHAIN = _START_EACH_CHAIN + 1
-    _FINISH_API_DEP_EACH_CHAIN = _FINISH_OBJ_DEP_EACH_CHAIN + 1
-    _FINISH_API_DEP_ALL_CHAINS = _FINISH_API_DEP_EACH_CHAIN + 1
-    _FINISH_API_DEP_GRAPH = _FINISH_API_DEP_ALL_CHAINS + 1
 
     def __init__(self, 
-                 api_set_name: str,
+                 package_name: str,
                  api_sel: str | list[int], 
-                 state_name: dict,
-                 api_dict: dict,
-                 repr_type: Literal['nest_dict', 'code_line'] = 'code_line',
                  debug: bool = False):
-        """
-        Discovery dependency graph among API chains given multiple API chains represented in code lines, where
-        each APi chain is seens as a use case of the package.
+        
+        api_chains = importlib.import_module(f"biochatter.api_agent.python.{package_name}.api_chains")
+        api_chains = api_chains.DATA
+        api_dict = importlib.import_module(f"biochatter.api_agent.python.{package_name}.api_dict")
+        api_dict = getattr(api_dict, 'FULL_API_DICT')
+        self.state = State(
+            importlib.import_module(f"biochatter.api_agent.python.{package_name}.info_hub").PKGS,
+            importlib.import_module(f"biochatter.api_agent.python.{package_name}.info_hub").DATA
+        )
+        self.result_dir = f'biochatter/api_agent/python/{package_name}'
 
-        Parameters
-        ----------
-        api_set_name : str
-            The API set path relative to 'resource' directory, such as 'scanpy.SCANPY_PL_MULTI_LINE_SIMPLE_ARG'.
-        api_sel : str | int
-            The slice of API selections. If 'all' then select all API. If a list of integers, then select the API indexed by `api_sel`.
-        state_name : str
-            The state name of the code execution env. Available states are ['scanpy', 'squidpy'].
-        repr_type : Literal['nest_dict', 'code_line'], default 'code_line'
-            The representation type of the API. If 'nest_dict', then the API is represented as a nested dictionary.
-            If 'code_line', then the API is represented as a code line. For now, only 'code_line' is supported.
-        debug : bool, default False
-            Whether to run in debug mode. If True, then only run the first 3 API chains within the selected API subset.
-        """
-        # Jiahang(severe): this is a temporary solution to import the API chains.
+        if api_sel == 'all':
+            api_sel = list(api_chains.keys())
+
         self.api_dict = api_dict
-        self.api_chains = import_module(f'biochatter.api_agent.dep_discovery.SCANPY_PL_MULTI_LINE_SIMPLE_ARG').DATA
-        self.api_meta = import_module(f'biochatter.api_agent.dep_discovery.SCANPY_PL_MULTI_LINE_SIMPLE_ARG').META
-        self.api_sel = range(len(self.api_chains)) if api_sel == 'all' else api_sel
-        self.repr_type = repr_type
-        assert self.repr_type == 'code_line', "Only code_line representation is supported for now."
-        self.state_name = state_name
+        self.api_chains = api_chains
+        self.api_sel = api_sel
         self.debug = debug
 
         self.code_history = CodeHistory()
-        self.knockoff_runner = Knockoff()
-
-        self.run_level = DependencyFinder._START_EACH_CHAIN # this is used to easy track execution flow.
 
     def clear(self):
         self.code_history.clear()
-        self.knockoff_runner.clear()
-        self.run_level = DependencyFinder._START_EACH_CHAIN
-
 
     def find_obj_dep_for_each_chain(self, api_chain: list):
-        assert self.run_level < DependencyFinder._FINISH_OBJ_DEP_EACH_CHAIN, \
-            f"Execution flow should not finish object-level dependency discovery for each chain." \
-            f"Please check the run level {self.run_level}."
-    
         num_api = len(api_chain)
         res_api_chain = []
         all_dep_prod = []
-        state = set_state(self.state_name)
+        self.state.reset_state()
 
         res_api_chain.append(api_chain[0])
 
@@ -85,7 +60,9 @@ class DependencyFinder:
             self.code_history.clear()
             self.code_history.add_code(dep_api_call)
             
-            output, error = run_codes(self.code_history.code_history, state=state)
+            # Jiahang (TODO): if State is used by other modules, arg type of run_codes would become `State` instead of `dict`.
+            # then usage of run_codes should be revised.
+            output, error = run_codes(self.code_history.code_history, state=self.state.state)
             if isinstance(error, Exception):
                 logger.info(f"Program failed in initial calling: {output}\n"
                             f"Codes:\n{self.code_history.code_history}")
@@ -95,19 +72,15 @@ class DependencyFinder:
             all_dep_prod.extend(dep_prod)
 
             """Key: discover unitary dependency of each target API on products produced by the all dependent(previous) API"""
-            self.knockoff_runner.preprocess(all_dep_prod, target_api, self.state_name, state)
-            nec_prod = self.knockoff_runner.run_unitary()
+            knockoff_runner = Knockoff(all_dep_prod, target_api, self.state)
+            nec_prod = knockoff_runner.run_unitary()
 
             target_api['dependencies_obj'] = nec_prod
             res_api_chain.append(target_api)
 
-        self.run_level = DependencyFinder._FINISH_OBJ_DEP_EACH_CHAIN
         return res_api_chain, True
     
     def find_api_dep_for_each_chain(self, res_api_chain: list):
-        assert self.run_level < DependencyFinder._FINISH_API_DEP_EACH_CHAIN, \
-            f"Execution flow should not finish API-level dependency discovery for each chain." \
-            f"Please check the run level {self.run_level}."
         num_api = len(res_api_chain)
         _res_api_chain = res_api_chain.copy()
 
@@ -127,10 +100,9 @@ class DependencyFinder:
         print(DependencyFinder.SEP_LINE)
 
         res_api_chain = _res_api_chain
-        self.run_level = DependencyFinder._FINISH_API_DEP_EACH_CHAIN
         return res_api_chain
     
-    def _parse_codes(self, codes: str) -> dict:
+    def parse_codes(self, codes: str) -> dict:
         code_lines = [line.strip() for line in codes.split('\n')]
         code_lines = [line for line in code_lines if line]
 
@@ -182,8 +154,8 @@ class DependencyFinder:
                         else:
                             self.arg_types[arg.keyword.value] = "object"
                         
-                        # when str, arg.value.value is tricky, it would be a string of string.
-                        self.args[arg.keyword.value] = arg.value.value
+                        temp_module = cst.Module(body=[])
+                        self.args[arg.keyword.value] = temp_module.code_for_node(arg.value)
 
         for code_line in code_lines:
             # Parse the code line using libcst
@@ -199,8 +171,19 @@ class DependencyFinder:
                 })
 
         return results
+    
+    def check_api_validity(self, api_chain: list) -> bool:
+        for api in api_chain:
+            api_name = api['api']
+            if api_name not in self.api_dict:
+                logger.info(f"API {api_name} not found.")
+                return False
+            if self.api_dict[api_name].get('_deprecated', False):
+                logger.info(f"API {api_name} is deprecated.")
+                return False
+        return True
 
-    def _add_products(self, parsed_api_chain: list) -> list:
+    def add_products(self, parsed_api_chain: list) -> list:
         # import products from pre-compiled API data models
         for idx in range(len(parsed_api_chain)):
             parsed_api_chain[idx]['products'] = self.api_dict[parsed_api_chain[idx]['api']]['products']
@@ -208,16 +191,15 @@ class DependencyFinder:
         return parsed_api_chain
 
     def find_obj_dep_for_all_chains(self):
-        assert self.run_level == DependencyFinder._START_EACH_CHAIN, \
-            f"Execution flow should be at the start status. Please check the run level {self.run_level}."
         cnt = 0
         res_api_chains = []
         
         for api_chain in [self.api_chains[i] for i in self.api_sel]:
-            self.run_level = DependencyFinder._START_EACH_CHAIN
             codes = api_chain['codes']
-            parsed_api_chain = self._parse_codes(codes)
-            parsed_api_chain = self._add_products(parsed_api_chain)
+            parsed_api_chain = self.parse_codes(codes)
+            if not self.check_api_validity(parsed_api_chain):
+                continue
+            parsed_api_chain = self.add_products(parsed_api_chain)
             res_api_chain, success = self.find_obj_dep_for_each_chain(parsed_api_chain)
             if not success:
                 continue    
@@ -227,39 +209,62 @@ class DependencyFinder:
 
             if self.debug and cnt > DependencyFinder.MAX_CNT:
                 break
-        self.run_level = DependencyFinder._FINISH_API_DEP_ALL_CHAINS
         return res_api_chains
     
     def construct_dep_graph(self): # the entry point of the whole workflow
+
+        # Jiahang (TODO, high priority):
+        # Here added args is a superset of active args, developers are required to
+        # filter out inactive args.
+        # In the future, we should figure out a way to do this automatically.
         res_api_chains = self.find_obj_dep_for_all_chains()
         G = nx.DiGraph()
         for api_chain in res_api_chains:
             for api in api_chain:
                 _api: dict = api.copy()
                 dependencies: dict = _api.pop('dependencies') if 'dependencies' in _api.keys() else {}
-                G.add_node(_api['api'], **_api) # dependencies should not be added
+                G.add_node(_api['api'], api= _api['api']) # dependencies should not be added
                 for dep_api_name, obj_dep in dependencies.items():
-                    G.add_edge(dep_api_name, _api['api'], dependencies=obj_dep)
+                    args = _api['args']
+                    arg_types = _api['arg_types']
+                    G.add_edge(dep_api_name, _api['api'], 
+                               dependencies=obj_dep,
+                               args=args,
+                               arg_types=arg_types
+                            )
 
         # create a root node
-        G.add_node('root')
+        G.add_node('root', api='root')
         in_degrees = G.in_degree()
         init_nodes = [
             node for node, degree in in_degrees if degree == 0 and node != 'root'
         ]
-        G.add_edges_from([('root', node) for node in init_nodes])
+        for node in init_nodes:
+            G.add_edge('root', node, 
+                       dependencies=['data.X'], 
+                       args={"data": "data"},
+                       arg_types={"data": "object"}
+                    )
 
-        self.run_level = DependencyFinder._FINISH_API_DEP_GRAPH
         return G, res_api_chains
     
     def __call__(self, *args, **kwds):
-        return self.construct_dep_graph()
+        G, res_APIs = self.construct_dep_graph()
+
+        os.makedirs(os.path.dirname(self.result_dir), exist_ok=True)
+        data_path = os.path.join(self.result_dir, 'raw_dep.json')
+        graph_json_path = os.path.join(self.result_dir, 'graph.json')
+
+        logger.warning("Developers are required to filter out inactive args manually for now. "
+                       "Automatic active args discovery is under development.")
+
+        if not self.debug:
+            with open(data_path, 'w') as f:
+                json.dump(res_APIs, f, indent=4)
+            logger.info(f"Results saved to {data_path}")
+
+            with open(graph_json_path, 'w') as f:
+                json.dump(nx.node_link_data(G, edges='edges'), f, indent=4)
+            logger.info(f"Graph json saved to {graph_json_path}")
         
-
-
-            
-        
-    
-
-    
-
+        return G, res_APIs
