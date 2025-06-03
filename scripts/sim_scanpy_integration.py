@@ -17,8 +17,14 @@ from biochatter.api_agent.dep_discovery import DependencyFinder
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--stage", type=str, choices=['dependency_discovery', 'load_dep_graph'])
+    parser.add_argument("--stage", type=str, choices=['construct_api', 'dependency_discovery', 'load_dep_graph'])
     args = parser.parse_args()
+
+    if args.stage == 'construct_api':
+        # Jiahang (TODO): unify API style.
+        """
+        python biochatter/api_agent/gen_data_model.py --package_name scanpy --api_dict_name pp
+        """
 
     if args.stage == 'dependency_discovery':
         dep_finder = DependencyFinder(
