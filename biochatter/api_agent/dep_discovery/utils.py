@@ -110,9 +110,9 @@ class ArgInfo(ABC):
     
     def __hash__(self):
         arg_val = self.arg_val
-        if isinstance(arg_val, dict): # unhashable
+        if self.arg_type == "dict": # unhashable
             arg_val = tuple(sorted(arg_val.items()))
-        elif isinstance(arg_val, list): # unhashable
+        elif self.arg_type == "list": # unhashable
             arg_val = tuple(sorted(arg_val))
         return hash((self.arg_name, arg_val))
     
@@ -121,6 +121,8 @@ class ArgInfo(ABC):
         Convert the arg info to python code.
         """
         arg_val = self.arg_val
+        if self.arg_type == "str":
+            arg_val = f"'{arg_val}'"
         if require_arg_name:
             return f"{self.arg_name} = {arg_val}" if arg_val is not None else f"{self.arg_name} = None"
         return f"{arg_val}" if arg_val is not None else "None"

@@ -16,10 +16,11 @@ def run_codes(code: str, state: dict[str, object]):
     """
     
     try:
-        result = str(evaluate_python_code(code, state=state)[0])
+        # Jiahang (TODO): remove str() here. may be a problem without str().
+        results = evaluate_python_code(code, state=state)[0]
     except Exception as e:
         return f"ERROR: {str(e)}", e
-    return result, None
+    return results, None
 
 
 def get_data_model_name(api_name: str) -> str:

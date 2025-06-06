@@ -10,11 +10,13 @@ from langchain_core.output_parsers import PydanticToolsParser
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
 import networkx as nx
+import matplotlib
 
 import json
 from queue import Queue
 import scanpy
 from typing import Any
+from tqdm import tqdm
 class ScanpyQueryBuilder(BaseQueryBuilder):
     def __init__(self, 
                  conversation: Conversation,
@@ -40,18 +42,39 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
         self,
         question: str,
         tools: list[BaseAPI | type],
+        batch_size: int = 3, # Jiahang (TODO): support parallel batching.
     ):
-        llm_with_tools: BaseChatModel = self.conversation.chat.bind_tools(tools, tool_choice="required")
-        parser = PydanticToolsParser(tools=tools)
-        # Jiahang (TODO): only one target API being considered for now
-        # can we somehow restrict LLM to predict only one API?
-        # Jiahang (random note): I found openai llm n -> 1 and temperature -> 0.0,
-        # hindering majority vote and revising incorrect results through multiple trials.
-        tools = llm_with_tools.invoke(question)
-        tool: BaseAPI = parser.invoke(tools)[0]
+        # batch over tools
+        # Jiahang (TODO): no need for arg prediction for each batch. we can prediction
+        # api over all batches, and prediction arguments when the final winner appears.
+
+        # Jiahang (TODO): arg prediction sucks since args too many.
+        # 1. arg modification verifier: ask llm whether this arg different from the default 
+        # value is a correct modification according to the user query.
+        # 2. arg importance scorer: only involve important args to reduce the number of args.
+        assert len(tools) > 0, "tools should not be empty"
+        tool_class = tools[0]
+        if len(tools) == 1:
+            llm_with_tools: BaseChatModel = \
+                self.conversation.chat.bind_tools([tool_class], 
+                                                  tool_choice="required")
+            parser = PydanticToolsParser(tools=[tool_class])
+            tool = llm_with_tools.invoke(question)
+            tool: BaseAPI = parser.invoke(tool)[0]
+        
+        for i in tqdm(range(1, len(tools), batch_size)):
+            batch_tools = tools[i:i+batch_size]
+            batch_tools.append(tool_class)
+            llm_with_tools: BaseChatModel = self.conversation.chat.bind_tools(batch_tools, tool_choice="required")
+            parser = PydanticToolsParser(tools=batch_tools)
+            # Jiahang (TODO): I found openai llm n -> 1 and temperature -> 0.0,
+            # hindering majority vote and revising incorrect results through multiple trials.
+            tools_batch = llm_with_tools.invoke(question)
+            tool: BaseAPI = parser.invoke(tools_batch)[0]
+            tool_class = tool.__class__
 
         if tool._api_name != "root":
-            tool = tool.post_parametrise()
+            tool.post_parametrise()
         
         return tool
     
@@ -75,7 +98,7 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
                     # For now, we only allow a single instance of each API.
                     if in_dep.u_api_name not in execution_graph.nodes:
                         active_predecessor = self.dep_graph.get_api(in_dep.u_api_name)
-                        active_predecessor = self._parametrise_api(question, [active_predecessor])
+                        active_predecessor = self._parametrise_api(question, [active_predecessor], batch_size=1) # Jiahang (TODO): batch_size=1 is a hack.
                         execution_graph.add_api(active_predecessor)
                         next_api_queue.put(active_predecessor)
                     execution_graph.add_dep(in_dep)
@@ -86,6 +109,7 @@ class ScanpyFetcher(BaseFetcher):
         self,
         execution_graph: list[ExecutionGraph],
         data: object | None = None, # Jiahang (TODO): we pass a list to follow the interface. Bad practice.
+        ax: matplotlib.axes.Axes | None = None,
         retries: int | None = 3,
     ) -> object:
         code_lines = []
@@ -107,15 +131,15 @@ class ScanpyFetcher(BaseFetcher):
             # "Predict an argument value only when user clearly specifies. Leave arguments as default otherwise."
             # and "n_comps=15".
             # it's weird that the second one cannot work either.
-            results, api_calling = api.execute(state={'sc': scanpy})
-            code_lines.append(api_calling)
+            api.execute(state={'sc': scanpy})
             execution_graph.update_api(api)
             out_deps = execution_graph.out_deps(api._api_name)
             for out_dep in out_deps:
                 out_dep = retrieve_products(api, out_dep)
                 execution_graph.update_dep(out_dep)
+            code_lines.append(api._api_calling)
         print('\n'.join(code_lines)) # Jiahang (TODO): using logger to do the printing.
-        return api._products.data
+        return api._results.data
     
 class ScanpyInterpreter(BaseInterpreter):
     def summarise_results(

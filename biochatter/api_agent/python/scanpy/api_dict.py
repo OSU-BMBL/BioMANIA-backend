@@ -22,6 +22,15 @@ test = {
 	},
 }
 
+test1 = {
+    "sc.pl.dotplot":
+    {
+        "api": sc.pl.dotplot,
+        "products": [],
+        "data_name": "adata"
+    }
+}
+
 pp_api_dict = {
     "sc.pp.neighbors":
 	{
@@ -29,7 +38,11 @@ pp_api_dict = {
 		"products": [
 			"data.uns[\"neighbors\"]",
 			"data.obsp[\"distances\"]",
-			"data.obsp[\"connectivities\"]"
+			"data.obsp[\"connectivities\"]",
+            'data.obsm["X_pca"]',
+            'data.varm["PCs"]',
+            'data.uns["pca"]["variance_ratio"]',
+            'data.uns["pca"]["variance"]',
 		],
 		"data_name": "adata"
 	},
