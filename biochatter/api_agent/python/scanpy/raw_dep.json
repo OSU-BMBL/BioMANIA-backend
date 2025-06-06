@@ -28,8 +28,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -37,7 +37,7 @@
             "api": "sc.pl.scatter",
             "args": {
                 "adata": "data",
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "adata": "object",
@@ -80,8 +80,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -99,8 +99,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -108,7 +108,7 @@
             "api": "sc.pl.umap",
             "args": {
                 "adata": "data",
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "adata": "object",
@@ -154,8 +154,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -164,7 +164,7 @@
             "args": {
                 "adata": "data",
                 "var_names": "['Gata2', 'Gata1', 'Fog1']",
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "adata": "object",
@@ -208,8 +208,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -218,7 +218,7 @@
             "args": {
                 "adata": "data",
                 "var_names": "['Gata2', 'Gata1', 'Fog1']",
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "adata": "object",
@@ -262,8 +262,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -272,7 +272,7 @@
             "args": {
                 "adata": "data",
                 "var_names": "['Gata2', 'Gata1', 'Fog1']",
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "adata": "object",
@@ -282,9 +282,9 @@
             "products": [],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"distances\"]",
+                    "data.uns[\"neighbors\"]",
                     "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.obsp[\"distances\"]"
                 ],
                 "sc.tl.louvain": [
                     "data.obs[\"louvain\"]",
@@ -322,8 +322,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -331,7 +331,7 @@
             "api": "sc.pl.dendrogram",
             "args": {
                 "adata": "data",
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "adata": "object",
@@ -374,8 +374,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -393,8 +393,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -402,7 +402,7 @@
             "api": "sc.pl.diffmap",
             "args": {
                 "adata": "data",
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "adata": "object",
@@ -480,8 +480,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -489,7 +489,7 @@
             "api": "sc.pl.pca",
             "args": {
                 "adata": "data",
-                "color": "'louvain'"
+                "color": "louvain"
             },
             "arg_types": {
                 "adata": "object",
@@ -498,9 +498,9 @@
             "products": [],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"distances\"]",
+                    "data.uns[\"neighbors\"]",
                     "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.obsp[\"distances\"]"
                 ],
                 "sc.tl.louvain": [
                     "data.obs[\"louvain\"]",
@@ -552,8 +552,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -561,7 +561,7 @@
             "api": "sc.pl.tsne",
             "args": {
                 "adata": "data",
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "adata": "object",
@@ -607,8 +607,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -616,7 +616,7 @@
             "api": "sc.tl.embedding_density",
             "args": {
                 "adata": "data",
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "adata": "object",
@@ -636,7 +636,7 @@
             "api": "sc.pl.embedding_density",
             "args": {
                 "adata": "data",
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "adata": "object",
@@ -683,8 +683,8 @@
             ],
             "dependencies": {
                 "sc.pp.neighbors": [
-                    "data.obsp[\"connectivities\"]",
-                    "data.uns[\"neighbors\"]"
+                    "data.uns[\"neighbors\"]",
+                    "data.obsp[\"connectivities\"]"
                 ]
             }
         },
@@ -692,7 +692,7 @@
             "api": "sc.tl.rank_genes_groups",
             "args": {
                 "adata": "data",
-                "groupby": "'leiden'"
+                "groupby": "leiden"
             },
             "arg_types": {
                 "adata": "object",
@@ -711,7 +711,7 @@
             "api": "sc.pl.rank_genes_groups_dotplot",
             "args": {
                 "adata": "data",
-                "groupby": "'leiden'"
+                "groupby": "leiden"
             },
             "arg_types": {
                 "adata": "object",

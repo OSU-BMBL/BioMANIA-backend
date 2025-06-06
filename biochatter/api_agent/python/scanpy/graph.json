@@ -91,8 +91,8 @@
     "edges": [
         {
             "dependencies": [
-                "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.uns[\"neighbors\"]",
+                "data.obsp[\"connectivities\"]"
             ],
             "args": {
                 "adata": "data"
@@ -105,8 +105,8 @@
         },
         {
             "dependencies": [
-                "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.uns[\"neighbors\"]",
+                "data.obsp[\"connectivities\"]"
             ],
             "args": {
                 "adata": "data"
@@ -119,8 +119,8 @@
         },
         {
             "dependencies": [
-                "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.uns[\"neighbors\"]",
+                "data.obsp[\"connectivities\"]"
             ],
             "args": {
                 "adata": "data"
@@ -133,9 +133,9 @@
         },
         {
             "dependencies": [
-                "data.obsp[\"distances\"]",
+                "data.uns[\"neighbors\"]",
                 "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.obsp[\"distances\"]"
             ],
             "args": {
                 "adata": "data"
@@ -148,8 +148,8 @@
         },
         {
             "dependencies": [
-                "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.uns[\"neighbors\"]",
+                "data.obsp[\"connectivities\"]"
             ],
             "args": {
                 "adata": "data"
@@ -162,9 +162,9 @@
         },
         {
             "dependencies": [
-                "data.obsp[\"distances\"]",
+                "data.uns[\"neighbors\"]",
                 "data.obsp[\"connectivities\"]",
-                "data.uns[\"neighbors\"]"
+                "data.obsp[\"distances\"]"
             ],
             "args": {
                 "adata": "data"
@@ -180,7 +180,7 @@
                 "data.obsm[\"X_umap\"]"
             ],
             "args": {
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "basis": "str"
@@ -206,7 +206,7 @@
                 "data.obsm[\"X_umap\"]"
             ],
             "args": {
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "basis": "str"
@@ -219,7 +219,7 @@
                 "data.obsm[\"X_umap\"]"
             ],
             "args": {
-                "basis": "'umap'"
+                "basis": "umap"
             },
             "arg_types": {
                 "basis": "str"
@@ -232,7 +232,7 @@
                 "data.obs[\"leiden\"]"
             ],
             "args": {
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "color": "str"
@@ -245,7 +245,7 @@
                 "data.obs[\"leiden\"]"
             ],
             "args": {
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "color": "str"
@@ -258,7 +258,7 @@
                 "data.obs[\"leiden\"]"
             ],
             "args": {
-                "color": "'leiden'"
+                "color": "leiden"
             },
             "arg_types": {
                 "color": "str"
@@ -271,7 +271,7 @@
                 "data.obs[\"leiden\"]"
             ],
             "args": {
-                "groupby": "'leiden'"
+                "groupby": "leiden"
             },
             "arg_types": {
                 "groupby": "str"
@@ -284,7 +284,7 @@
                 "data.obs[\"leiden\"]"
             ],
             "args": {
-                "groupby": "'leiden'"
+                "groupby": "leiden"
             },
             "arg_types": {
                 "groupby": "str"
@@ -297,7 +297,7 @@
                 "data.obs[\"louvain\"]"
             ],
             "args": {
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "groupby": "str"
@@ -310,7 +310,20 @@
                 "data.obs[\"louvain\"]"
             ],
             "args": {
-                "groupby": "'louvain'"
+                "color": "louvain"
+            },
+            "arg_types": {
+                "color": "str"
+            },
+            "source": "sc.tl.louvain",
+            "target": "sc.pl.tsne"
+        },
+        {
+            "dependencies": [
+                "data.obs[\"louvain\"]"
+            ],
+            "args": {
+                "groupby": "louvain"
             },
             "arg_types": {
                 "groupby": "str"
@@ -324,7 +337,7 @@
                 "data.uns[\"louvain\"]"
             ],
             "args": {
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "groupby": "str"
@@ -337,7 +350,7 @@
                 "data.obs[\"louvain\"]"
             ],
             "args": {
-                "groupby": "'louvain'"
+                "groupby": "louvain"
             },
             "arg_types": {
                 "groupby": "str"
@@ -351,7 +364,7 @@
                 "data.uns[\"louvain\"]"
             ],
             "args": {
-                "color": "'louvain'"
+                "color": "louvain"
             },
             "arg_types": {
                 "color": "str"
@@ -364,10 +377,10 @@
                 "data.obsm[\"X_diffmap\"]"
             ],
             "args": {
-                "adata": "data"
+                "color": "leiden"
             },
             "arg_types": {
-                "adata": "object"
+                "color": "str"
             },
             "source": "sc.tl.diffmap",
             "target": "sc.pl.diffmap"
@@ -430,10 +443,10 @@
                 "data.X"
             ],
             "args": {
-                "data": "data"
+                "adata": "data"
             },
             "arg_types": {
-                "data": "object"
+                "adata": "object"
             },
             "source": "root",
             "target": "sc.pp.neighbors"
@@ -456,10 +469,10 @@
                 "data.X"
             ],
             "args": {
-                "data": "data"
+                "adata": "data"
             },
             "arg_types": {
-                "data": "object"
+                "adata": "object"
             },
             "source": "root",
             "target": "sc.tl.tsne"

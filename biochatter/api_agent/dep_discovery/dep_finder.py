@@ -5,13 +5,16 @@ import importlib
 import networkx as nx
 import libcst as cst
 import json
-from ast import literal_eval
 
 from .utils import State, build_API_calling, Knockoff, CodeHistory
 from biochatter.api_agent.base.utils import run_codes
 
 # Jiahang (TODO): logs are too messy. developers may find it hard to debug according to logs.
-# Jiahang (TODO): knockoff error for dependency discovery and real errors are mixing.
+# Jiahang (TODO): knockoff error for dependency discovery and real errors, especially errors of provided codes, are mixing.
+# Jiahang (TODO): incremental dependency discovery.
+# Jiahang (TODO): provide command line interface.
+# Jiahang (TODO): is it necessary to have json output? what is python dict which is more 
+# versatile? should we consider transferability of graph structure output?
 class DependencyFinder:
     MAX_CNT = 3
     SEP_LINE = "-" * 40
@@ -56,6 +59,8 @@ class DependencyFinder:
             dep_api = api_chain[dep_idx] # the dependent api
             target_api = api_chain[dep_idx + 1] # the next api
 
+            # Jiahang (TODO): this build api calling is also used in execution graph forward
+            # pass. we should unify them.
             dep_api_call = build_API_calling(dep_api)
             self.code_history.clear()
             self.code_history.add_code(dep_api_call)
@@ -155,7 +160,22 @@ class DependencyFinder:
                             self.arg_types[arg.keyword.value] = "object"
                         
                         temp_module = cst.Module(body=[])
+
+                        # Jiahang (TODO): we should note how we deal with str type and 
+                        # name type. 
+                        # 1. name type: data, represented by "data" with type "object".
+                        # 2. str type: "data", represented by "'data'" with type "str".
+                        # for the sake of simplicity, we represent str type as "data" rather
+                        # than "'data'" to avoid processing string of string issue.
+                        # be noted that it's reasonable to have name and str type the same representation.
+                        # because LLM actually predicts string representation of a name, rather than the actual variable represented by the name.
+                        # so essentially, name and str are both str. 
+                        # to help differentiate name and str, we tag them with type annotations.
+                        # motivated by these notions, we remove '' and "" from the str type arg value, keeping it the same as name type repr.
+                        
                         self.args[arg.keyword.value] = temp_module.code_for_node(arg.value)
+                        if self.arg_types[arg.keyword.value] == "str":
+                            self.args[arg.keyword.value] = self.args[arg.keyword.value].strip("'").strip('"')
 
         for code_line in code_lines:
             # Parse the code line using libcst
@@ -240,10 +260,11 @@ class DependencyFinder:
             node for node, degree in in_degrees if degree == 0 and node != 'root'
         ]
         for node in init_nodes:
+            data_name = self.api_dict[node]['data_name']
             G.add_edge('root', node, 
                        dependencies=['data.X'], 
-                       args={"data": "data"},
-                       arg_types={"data": "object"}
+                       args={data_name: "data"},
+                       arg_types={data_name: "object"}
                     )
 
         return G, res_api_chains
