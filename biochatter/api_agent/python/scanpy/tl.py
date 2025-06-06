@@ -1,47 +1,50 @@
 from __future__ import annotations
-
-from typing import Any, Optional
 from pydantic import ConfigDict, Field, PrivateAttr
-
 from biochatter.api_agent.base.agent_abc import BaseAPI
+import typing
+from typing import *
 
 
 class ScTlPaga(BaseAPI):
     """
-    Map out the coarse-grained connectivity structures of complex manifolds. Explains the concept of partition-based graph abstraction (PAGA) and how it simplifies the representation of single-cell graph connectivity. Discusses the interpretation of confidence in PAGA and its application for obtaining a simplified representation of manifold data.
+    Map out the coarse-grained connectivity structures of complex manifolds using partition-based graph abstraction (PAGA) to generate a simpler abstracted graph representation.
     """
 
-    adata: Any = Field(
-        ...,
-        description="An annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""An annotated data matrix used as input.
+        """,
     )
-    groups: Any = Field(
+    groups: str | None = Field(
         None,
-        description="Key for categorical in `adata.obs`. You can pass your predefined groups by choosing any categorical annotation of observations. Default: The first present key of `'leiden'` or `'louvain'`. Original type annotation: str | None",
-        title="Groups",
+        description="""Key for categorical data in the annotated data matrix. Default key is \'leiden\' or \'louvain\'.
+        Original annotation is str | None
+        """,
     )
-    use_rna_velocity: Optional[Any] = Field(
+    use_rna_velocity: bool = Field(
         False,
-        description="Use RNA velocity to orient edges in the abstracted graph and estimate transitions. Requires that `adata.uns` contains a directed single-cell graph with key `['velocity_graph']`. This feature might be subject to change in the future. Original type annotation: bool",
-        title="Use Rna Velocity",
+        description="""Option to utilize RNA velocity to orient edges in the abstracted graph and estimate transitions.
+        Original annotation is bool
+        """,
     )
-    model: Optional[Any] = Field(
+    model: Literal["v1.2", "v1.0"] = Field(
         "v1.2",
-        description="The PAGA connectivity model. Original type annotation: Literal['v1.2', 'v1.0']",
-        title="Model",
+        description="""The PAGA connectivity model to be applied.
+        Original annotation is Literal['v1.2', 'v1.0']
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="If not specified, paga looks `.uns['neighbors']` for neighbors settings and `.obsp['connectivities']`, `.obsp['distances']` for connectivities and distances respectively (default storage places for `pp.neighbors`). If specified, paga looks `.uns[neighbors_key]` for neighbors settings and `.obsp[.uns[neighbors_key]['connectivities_key']]`, `.obsp[.uns[neighbors_key]['distances_key']]` for connectivities and distances respectively. Original type annotation: str | None",
-        title="Neighbors Key",
+        description="""Parameter specifying where to look for neighbor settings and connectivities in the data matrix.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Copy `adata` before computation and return a copy. Otherwise, perform computation inplace and return `None`. Original type annotation: bool",
-        title="Copy",
-    )
+    # copy: bool = Field(
+    #     False,
+    #     description="""Option to copy the data matrix before computation or perform computation in place.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.paga")
     _products_original: list[str] = PrivateAttr(
         default=[
@@ -54,76 +57,96 @@ class ScTlPaga(BaseAPI):
 
 class ScTlLeiden(BaseAPI):
     """
-    Cluster cells into subgroups using the Leiden algorithm, an improved version of the Louvain algorithm, proposed for single-cell analysis. Prior execution of functions scanpy.pp.neighbors or scanpy.external.pp.bbknn is required.
+    Cluster cells into subgroups using the Leiden algorithm, an improved version of the Louvain algorithm, proposed for single-cell analysis. Requires running specific functions before clustering.
     """
 
-    adata: Any = Field(..., description="The annotated data matrix.", title="Adata")
-    resolution: Optional[Any] = Field(
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix.
+        """,
+    )
+    resolution: float = Field(
         1,
-        description="A parameter value controlling the coarseness of the clustering.",
-        title="Resolution",
+        description="""Parameter controlling clustering coarseness. Higher values lead to more clusters. Set to `None` in certain cases.
+        Original annotation is float
+        """,
     )
-    restrict_to: Any = Field(
+    restrict_to: typing.Any = Field(
         None,
-        description="Restrict the clustering to specific categories within the sample annotation.",
-        title="Restrict To",
+        description="""Restrict clustering to specific categories within sample annotations.
+        Original annotation is tuple[str, Sequence[str]] | None
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="Change the initialization of the optimization.",
-        title="Random State",
+        description="""Change optimization initialization.
+        Original annotation is _LegacyRandom
+        """,
     )
-    key_added: Optional[Any] = Field(
+    key_added: str = Field(
         "leiden",
-        description="Key under which to add the cluster labels.",
-        title="Key Added",
+        description="""Key under which cluster labels are added to `adata.obs`.
+        Original annotation is str
+        """,
     )
-    adjacency: Any = Field(
+    adjacency: typing.Any = Field(
         None,
-        description="Sparse adjacency matrix of the graph, defaults to neighbors connectivities.",
-        title="Adjacency",
+        description="""Sparse adjacency matrix of the graph, defaults to neighbors connectivities.
+        Original annotation is CSBase | None
+        """,
     )
-    directed: Any = Field(
+    directed: bool | None = Field(
         None,
-        description="Indicates whether the graph is directed or undirected.",
-        title="Directed",
+        description="""Indicate if the graph is directed or undirected.
+        Original annotation is bool | None
+        """,
     )
-    use_weights: Optional[Any] = Field(
+    use_weights: bool = Field(
         True,
-        description="Determines if edge weights from the graph are used in the computation.",
-        title="Use Weights",
+        description="""Use edge weights from the graph in computation, giving more weight to stronger edges.
+        Original annotation is bool
+        """,
     )
-    n_iterations: Optional[Any] = Field(
+    n_iterations: int = Field(
         -1,
-        description="Number of iterations of the Leiden clustering algorithm to perform.",
-        title="N Iterations",
+        description="""Number of iterations of the Leiden algorithm to perform, with options for termination conditions.
+        Original annotation is int
+        """,
     )
-    partition_type: Any = Field(
+    partition_type: typing.Any = Field(
         None,
-        description="Type of partition to use in clustering.",
-        title="Partition Type",
+        description="""Type of partition to use for clustering.
+        Original annotation is type[MutableVertexPartition] | None
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Specifies the key to use for neighbors connectivities as adjacency.",
-        title="Neighbors Key",
+        description="""Specify how neighbors connectivities are used as adjacency.
+        Original annotation is str | None
+        """,
     )
-    obsp: Any = Field(
-        None, description="Specifies the adjacency to use in clustering.", title="Obsp"
+    obsp: str | None = Field(
+        None,
+        description="""Specify adjacency matrix using `obsp`, cannot be used simultaneously with `neighbors_key`.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Whether to copy the data or modify it in place.",
-        title="Copy",
-    )
-    flavor: Optional[Any] = Field(
+    # copy: bool = Field(
+    #     False,
+    #     description="""Specify whether to modify `adata` in place or create a copy.
+    #     Original annotation is bool
+    #     """,
+    # )
+    flavor: typing.Any = Field(
         "leidenalg",
-        description="Specifies which package's implementation to use.",
-        title="Flavor",
+        description="""Select the implementation of a specific package.
+        Original annotation is Literal['leidenalg', 'igraph']
+        """,
     )
-    clustering_args: Any = Field(
-        ..., description="No description available.", title="Clustering Args"
+    clustering_args: typing.Any = Field(
+        Ellipsis,
+        description="""Additional arguments to pass to the clustering algorithm.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.leiden")
     _products_original: list[str] = PrivateAttr(
@@ -134,80 +157,92 @@ class ScTlLeiden(BaseAPI):
 
 class ScTlLouvain(BaseAPI):
     """
-    Cluster cells into subgroups using the Louvain algorithm with references to relevant papers and functions.
+    Cluster cells into subgroups using the Louvain algorithm, with options for different parameters and settings. Requires prior computation of neighbors or passing an adjacency matrix.
     """
 
-    adata: Any = Field(
-        ...,
-        description="The annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix used for clustering.
+        """,
     )
-    resolution: Any = Field(
+    resolution: float | None = Field(
         None,
-        description="For clustering, you can specify a resolution parameter that defaults to 1.0. Original type annotation: float | None",
-        title="Resolution",
+        description="""A parameter that can be adjusted to control the granularity of the clusters identified by the algorithm.
+        Original annotation is float | None
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="Change the initialization of the optimization. Original type annotation: _LegacyRandom",
-        title="Random State",
+        description="""Parameter to change the initialization of the optimization process.
+        Original annotation is _LegacyRandom
+        """,
     )
-    restrict_to: Any = Field(
+    restrict_to: typing.Any = Field(
         None,
-        description="Restrict clustering to specific categories within the sample annotation. Original type annotation: tuple[str, Sequence[str]] | None",
-        title="Restrict To",
+        description="""Option to limit the clustering to specific categories within the sample annotations.
+        Original annotation is tuple[str, Sequence[str]] | None
+        """,
     )
-    key_added: Optional[Any] = Field(
+    key_added: str = Field(
         "louvain",
-        description="Key to add the cluster labels under. Original type annotation: str",
-        title="Key Added",
+        description="""The key under which the cluster labels will be added in the output data structure.
+        Original annotation is str
+        """,
     )
-    adjacency: Any = Field(
+    adjacency: typing.Any = Field(
         None,
-        description="Sparse adjacency matrix of the graph, defaults to neighbors connectivities. Original type annotation: _CSMatrix | None",
-        title="Adjacency",
+        description="""The sparse adjacency matrix of the graph, which defaults to using neighbor connectivities for clustering.
+        Original annotation is CSBase | None
+        """,
     )
-    flavor: Optional[Any] = Field(
+    flavor: typing.Any = Field(
         "vtraag",
-        description="Choose between different packages for computing clustering, including 'vtraag', 'igraph', and 'rapids'. Original type annotation: Literal['vtraag', 'igraph', 'rapids']",
-        title="Flavor",
+        description="""Choice between different packages for performing the clustering algorithm, with options like \'vtraag\', \'igraph\', or \'rapids\'.
+        Original annotation is Literal['vtraag', 'igraph', 'rapids']
+        """,
     )
-    directed: Optional[Any] = Field(
+    directed: bool = Field(
         True,
-        description="Indicate whether the adjacency matrix represents a directed graph. Original type annotation: bool",
-        title="Directed",
+        description="""Determines whether the adjacency matrix should be interpreted as a directed graph.
+        Original annotation is bool
+        """,
     )
-    use_weights: Optional[Any] = Field(
+    use_weights: bool = Field(
         False,
-        description="Specify whether to use weights from knn graph. Original type annotation: bool",
-        title="Use Weights",
+        description="""Option to incorporate weights from the knn graph into the clustering process.
+        Original annotation is bool
+        """,
     )
-    partition_type: Any = Field(
+    partition_type: typing.Any = Field(
         None,
-        description="Type of partition to use, applicable only if the flavor is 'vtraag'. Original type annotation: type[MutableVertexPartition] | None",
-        title="Partition Type",
+        description="""Specifies the type of partitioning to use, applicable only when the flavor is set to \'vtraag\'.
+        Original annotation is type[MutableVertexPartition] | None
+        """,
     )
-    partition_kwargs: Optional[Any] = Field(
-        {},
-        description="Keyword arguments to pass to partitioning, particularly for the 'vtraag' method. Original type annotation: Mapping[str, Any]",
-        title="Partition Kwargs",
+    partition_kwargs: Mapping[str, Any] = Field(
+        "{}",
+        description="""Keyword arguments that can be passed for partitioning when the \'vtraag\' method is being used.
+        Original annotation is Mapping[str, Any]
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Specify the key to use for neighbors connectivities as adjacency. Original type annotation: str | None",
-        title="Neighbors Key",
+        description="""Specifies the use of neighbors connectivities as the adjacency matrix for Louvain clustering.
+        Original annotation is str | None
+        """,
     )
-    obsp: Any = Field(
+    obsp: str | None = Field(
         None,
-        description="Specify the adjacency using .obsp[obsp], cannot be used simultaneously with 'neighbors_key'. Original type annotation: str | None",
-        title="Obsp",
+        description="""Specifies the use of a specific adjacency matrix, with a note that both \'obsp\' and \'neighbors_key\' cannot be specified simultaneously.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Indicate whether to copy the data or modify it in place. Original type annotation: bool",
-        title="Copy",
-    )
+    # copy: bool = Field(
+    #     False,
+    #     description="""Choice to either copy the annotated data matrix or modify it in place during the clustering process.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.louvain")
     _products_original: list[str] = PrivateAttr(
         default=['data.obs["louvain"]', 'data.uns["louvain"]']
@@ -217,90 +252,104 @@ class ScTlLouvain(BaseAPI):
 
 class ScTlUmap(BaseAPI):
     """
-    Embed the neighborhood graph using UMAP. UMAP is a technique for visualizing high-dimensional data that is faster than tSNE and optimizes the embedding to best reflect the data's topology, represented using a neighborhood graph in Scanpy. The implementation of UMAP is based on umap-learn by McInnes (2018). For comparisons with tSNE, refer to Becht (2018).
+    Embed the neighborhood graph using UMAP. UMAP is a technique for visualizing high-dimensional data by optimizing the embedding to best reflect the data\'s topology.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    min_dist: Optional[Any] = Field(
+    min_dist: float = Field(
         0.5,
-        description="The effective minimum distance between embedded points, influencing clustering or dispersion. Default value in `umap-learn` is 0.1. Original type annotation: float",
-        title="Min Dist",
+        description="""The effective minimum distance between embedded points, influencing clustering in the embedding.
+        Original annotation is float
+        """,
     )
-    spread: Optional[Any] = Field(
+    spread: float = Field(
         1.0,
-        description="The scale of embedded points affecting clustering. Original type annotation: float",
-        title="Spread",
+        description="""The effective scale of embedded points, determining clustering in the embedding.
+        Original annotation is float
+        """,
     )
-    n_components: Optional[Any] = Field(
+    n_components: int = Field(
         2,
-        description="Number of dimensions in the embedding. Original type annotation: int",
-        title="N Components",
+        description="""The number of dimensions of the embedding.
+        Original annotation is int
+        """,
     )
-    maxiter: Any = Field(
+    maxiter: int | None = Field(
         None,
-        description="Number of optimization iterations. Original type annotation: int | None",
-        title="Maxiter",
+        description="""The number of iterations of the optimization process.
+        Original annotation is int | None
+        """,
     )
-    alpha: Optional[Any] = Field(
+    alpha: float = Field(
         1.0,
-        description="Initial learning rate for embedding optimization. Original type annotation: float",
-        title="Alpha",
+        description="""The initial learning rate for the embedding optimization.
+        Original annotation is float
+        """,
     )
-    gamma: Optional[Any] = Field(
+    gamma: float = Field(
         1.0,
-        description="Weighting for negative samples in low-dimensional embedding. Original type annotation: float",
-        title="Gamma",
+        description="""Weighting applied to negative samples in low dimensional embedding optimization.
+        Original annotation is float
+        """,
     )
-    negative_sample_rate: Optional[Any] = Field(
+    negative_sample_rate: int = Field(
         5,
-        description="Number of negative samples per positive sample for optimization. Original type annotation: int",
-        title="Negative Sample Rate",
+        description="""The number of negative edge samples used per positive edge sample in optimizing the embedding.
+        Original annotation is int
+        """,
     )
-    init_pos: Optional[Any] = Field(
+    init_pos: typing.Any = Field(
         "spectral",
-        description="Initialization method for low-dimensional embedding. Options include 'paga', 'spectral', 'random'. Original type annotation: _InitPos | np.ndarray | None",
-        title="Init Pos",
+        description="""How to initialize the low dimensional embedding, with options like \'paga\' or \'random\'.
+        Original annotation is _InitPos | np.ndarray | None
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="Seed for random number generation. Original type annotation: _LegacyRandom",
-        title="Random State",
+        description="""Determines the randomness in the embedding process.
+        Original annotation is _LegacyRandom
+        """,
     )
-    a: Any = Field(
+    a: float | None = Field(
         None,
-        description="Specific parameter for embedding control, automatically set if None. Original type annotation: float | None",
-        title="A",
+        description="""Specific parameters controlling the embedding, set automatically if None.
+        Original annotation is float | None
+        """,
     )
-    b: Any = Field(
+    b: float | None = Field(
         None,
-        description="Specific parameter for embedding control, automatically set if None. Original type annotation: float | None",
-        title="B",
+        description="""Specific parameters controlling the embedding, set automatically if None.
+        Original annotation is float | None
+        """,
     )
-    method: Optional[Any] = Field(
+    method: typing.Any = Field(
         "umap",
-        description="Chosen implementation between 'umap' and 'rapids'. Original type annotation: Literal['umap', 'rapids']",
-        title="Method",
+        description="""Chosen implementation, like \'umap\' or \'rapids\'.
+        Original annotation is Literal['umap', 'rapids']
+        """,
     )
-    key_added: Any = Field(
+    key_added: str | None = Field(
         None,
-        description="Specifies storage location for embedding and parameters. Original type annotation: str | None",
-        title="Key Added",
+        description="""Specifies where the embedding and parameters are stored.
+        Original annotation is str | None
+        """,
     )
-    neighbors_key: Optional[Any] = Field(
+    neighbors_key: str = Field(
         "neighbors",
-        description="Key to access neighbors settings and connectivities for Umap. Original type annotation: str",
-        title="Neighbors Key",
+        description="""Indicates where UMAP looks for neighbor settings and connectivities.
+        Original annotation is str
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Option to return a copy instead of modifying the input data. Original type annotation: bool",
-        title="Copy",
-    )
+    # copy: bool = Field(
+    #     False,
+    #     description="""Option to return a copy instead of writing to the original data.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.umap")
     _products_original: list[str] = PrivateAttr(
         default=['data.obsm["X_umap"]', 'data.uns["umap"]']
@@ -310,120 +359,129 @@ class ScTlUmap(BaseAPI):
 
 class ScTlTsne(BaseAPI):
     """
-    t-SNE was proposed for visualizating single-cell data and can be implemented using scikit-learn or Multicore-tSNE.
+    t-SNE algorithm for visualizing single-cell data using scikit-learn implementation, with the option for a speedup using Multicore-tSNE.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    n_pcs: Any = Field(
+    n_pcs: int | None = Field(
         None,
-        description="Use this many PCs. If `n_pcs==0` use `.X` if `use_rep is None`. Original type annotation: int | None",
-        title="N Pcs",
+        description="""Number of principal components to use, defaulting to .X if use_rep is None.
+        Original annotation is int | None
+        """,
     )
-    use_rep: Any = Field(
+    use_rep: str | None = Field(
         None,
-        description="Use the indicated representation. `'X'` or any key for `.obsm` is valid. If `None`, the representation is chosen automatically. Original type annotation: str | None",
-        title="Use Rep",
+        description="""Indicates the representation to use, automatically chosen if None, with specific behavior based on the number of variables.
+        Original annotation is str | None
+        """,
     )
-    perplexity: Optional[Any] = Field(
+    perplexity: float = Field(
         30,
-        description="The perplexity is related to the number of nearest neighbors that is used in other manifold learning algorithms. Consider selecting a value between 5 and 50. Original type annotation: float",
-        title="Perplexity",
+        description="""Parameter related to the number of nearest neighbors for manifold learning in t-SNE, typically between 5 and 50.
+        Original annotation is float
+        """,
     )
-    metric: Optional[Any] = Field(
+    metric: str = Field(
         "euclidean",
-        description="Distance metric to calculate neighbors on. Original type annotation: str",
-        title="Metric",
+        description="""Distance metric used to calculate neighbors.
+        Original annotation is str
+        """,
     )
-    early_exaggeration: Optional[Any] = Field(
+    early_exaggeration: float = Field(
         12,
-        description="Controls how tight natural clusters in the original space are in the embedded space. Original type annotation: float",
-        title="Early Exaggeration",
+        description="""Parameter controlling the tightness of clusters in the original and embedded space in t-SNE.
+        Original annotation is float
+        """,
     )
-    learning_rate: Optional[Any] = Field(
+    learning_rate: float = Field(
         1000,
-        description="The learning rate can be a critical parameter. It should be between 100 and 1000. Original type annotation: float",
-        title="Learning Rate",
+        description="""Critical parameter in t-SNE optimization, with a recommended range between 100 and 1000.
+        Original annotation is float
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="Change this to use different initial states for the optimization. Original type annotation: _LegacyRandom",
-        title="Random State",
+        description="""Allows changing the initial states for optimization, with None leading to non-reproducible results.
+        Original annotation is _LegacyRandom
+        """,
     )
-    use_fast_tsne: Optional[Any] = Field(
+    use_fast_tsne: bool = Field(
         False,
-        description="No description available. Original type annotation: bool",
-        title="Use Fast Tsne",
+        description="""No description available.
+        Original annotation is bool
+        """,
     )
-    n_jobs: Any = Field(
+    n_jobs: int | None = Field(
         None,
-        description="Number of jobs for parallel computation. Original type annotation: int | None",
-        title="N Jobs",
+        description="""Number of parallel jobs for computation, defaulting to scanpy settings.
+        Original annotation is int | None
+        """,
     )
-    key_added: Any = Field(
+    # Jiahang (TODO): when prompt with "louvain ...", it prediction wrong (to be "tsne").
+    # key problem: when context is long, hallucination occurs a lot. 
+    # these hallucinations include adata={}, copy=True, etc.
+    # a feasible method is arg modification verifier and arg importance scorer.
+    # but what if the clustering label name is really tsne? then we dont need that
+    # dependency? right?
+    key_added: str | None = Field(
         None,
-        description="Specifies where the embedding and parameters are stored. Original type annotation: str | None",
-        title="Key Added",
+        description="""Determines where the t-SNE embedding and parameters are stored in the AnnData object.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Return a copy instead of writing to `adata`. Original type annotation: bool",
-        title="Copy",
-    )
+    # Jiahang (TODO): when arguments scale up, hallucination occurs a lot, predicting
+    # copy to be True. sucks.
+    # copy: bool = Field(
+    #     False,
+    #     description="""Option to return a copy of the data instead of modifying the original AnnData object.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.tsne")
     _products_original: list[str] = PrivateAttr(
         default=['data.obsm["X_tsne"]', 'data.uns["tsne"]']
     )
     _data_name: str = PrivateAttr(default="adata")
 
-# Jiahang(severe): not being correctly summarized.
+
 class ScTlDiffmap(BaseAPI):
     """
-    Diffusion Maps :cite:p:`Coifman2005,Haghverdi2015,Wolf2018`.
-
-    Diffusion maps :cite:p:`Coifman2005` have been proposed for visualizing single-cell
-    data by :cite:t:`Haghverdi2015`. This tool uses the adapted Gaussian kernel suggested
-    by :cite:t:`Haghverdi2016` with the implementation of :cite:t:`Wolf2018`.
-
-    The width ("sigma") of the connectivity kernel is implicitly determined by
-    the number of neighbors used to compute the single-cell graph in
-    :func:`~scanpy.pp.neighbors`. To reproduce the original implementation
-    using a Gaussian kernel, use `method=='gauss'` in
-    :func:`~scanpy.pp.neighbors`. To use an exponential kernel, use the default
-    `method=='umap'`. Differences between these options shouldn't usually be
-    dramatic.
+    Diffusion maps have been proposed for visualizing single-cell data using an adapted Gaussian kernel. The width of the connectivity kernel is determined by the number of neighbors used to compute the single-cell graph.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix.\nOriginal type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    n_comps: Optional[Any] = Field(
+    n_comps: int = Field(
         15,
-        description="The number of dimensions of the representation.\nOriginal type annotation: int",
-        title="N Comps",
+        description="""The number of dimensions of the representation.
+        Original annotation is int
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="If not specified, diffmap looks in .uns['neighbors'] for neighbors settings\nand .obsp['connectivities'] and .obsp['distances'] for connectivities and\ndistances, respectively (default storage places for pp.neighbors).\nIf specified, diffmap looks in .uns[neighbors_key] for neighbors settings and\n.obsp[.uns[neighbors_key]['connectivities_key']] and\n.obsp[.uns[neighbors_key]['distances_key']] for connectivities and distances,\nrespectively.\nOriginal type annotation: str | None",
-        title="Neighbors Key",
+        description="""Specifies where to look for neighbors settings and connectivities/distance in the data structure. If not specified, default storage places are used.
+        Original annotation is str | None
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="A numpy random seed\nOriginal type annotation: _LegacyRandom",
-        title="Random State",
+        description="""A numpy random seed.
+        Original annotation is _LegacyRandom
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Return a copy instead of writing to adata.\nOriginal type annotation: bool",
-        title="Copy",
-    )
+    # copy: bool = Field(
+    #     False,
+    #     description="""Option to return a copy instead of modifying the original data.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.diffmap")
     _products_original: list[str] = PrivateAttr(
         default=['data.obsm["X_diffmap"]', 'data.uns["diffmap_evals"]']
@@ -433,33 +491,37 @@ class ScTlDiffmap(BaseAPI):
 
 class ScTlEmbeddingDensity(BaseAPI):
     """
-    Calculate the density of cells in an embedding (per condition). Gaussian kernel density estimation is used to calculate the density of cells in an embedded space. This can be performed per category over a categorical cell annotation. The cell density can be plotted using the `pl.embedding_density` function. Note that density values are scaled to be between 0 and 1, making them comparable only within the same category. The KDE estimate used (`scipy.stats.gaussian_kde`) may become unreliable if there are not enough cells in a category. This function was written by Sophie Tritschler and implemented into Scanpy by Malte Luecken.
+    Calculate the density of cells in an embedding (per condition) using Gaussian kernel density estimation. Density values are scaled between 0 and 1, comparable only within the same category. KDE estimate may be unreliable with insufficient cells in a category.
     """
 
-    adata: Any = Field(
-        ...,
-        description="The annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix.
+        """,
     )
-    basis: Optional[Any] = Field(
+    basis: str = Field(
         "umap",
-        description="The embedding over which the density will be calculated. This embedded representation is found in `adata.obsm['X_[basis]']`. Original type annotation: str",
-        title="Basis",
+        description="""The embedding where density calculation is done, found in `adata.obsm[\'X_[basis]\']`.
+        Original annotation is str
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="Key for categorical observation/cell annotation for which densities are calculated per category. Original type annotation: str | None",
-        title="Groupby",
+        description="""Key for categorical observation/cell annotation used to calculate densities per category.
+        Original annotation is str | None
+        """,
     )
-    key_added: Any = Field(
+    key_added: str | None = Field(
         None,
-        description="Name of the `.obs` covariate that will be added with the density estimates. Original type annotation: str | None",
-        title="Key Added",
+        description="""Name of the `.obs` covariate added with density estimates.
+        Original annotation is str | None
+        """,
     )
-    components: Any = Field(
+    components: str | Sequence[str] | None = Field(
         None,
-        description="The embedding dimensions over which the density should be calculated. This is limited to two components. Original type annotation: str | Sequence[str] | None",
-        title="Components",
+        description="""Limited to two components, these are the embedding dimensions for density calculation.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.embedding_density")
     _products_original: list[str] = PrivateAttr(
@@ -470,89 +532,104 @@ class ScTlEmbeddingDensity(BaseAPI):
 
 class ScTlRankGenesGroups(BaseAPI):
     """
-    Rank genes for characterizing groups. Expects logarithmized data.
+    Rank genes for characterizing groups. Expects logarithmized data. 
     """
-
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix with original type annotation AnnData.",
-        title="Adata",
+    # Jiahang (TODO, high priority): add prompt to gen_data_model data model doc
+    # simplification llm to reduce description of args. it is not needed in doc,
+    # but already filled in each arg.
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="Key of the observations grouping to consider with original type annotation str.",
-        title="Groupby",
+    groupby: str = Field(
+        Ellipsis,
+        description="""The key of the observations grouping to consider.
+        Original annotation is str
+        """,
     )
-    mask_var: Any = Field(
+    mask_var: typing.Any = Field(
         None,
-        description="Subset of genes to use in statistical tests with original type annotation NDArray[np.bool_] | str | None.",
-        title="Mask Var",
+        description="""Select subset of genes to use in statistical tests.
+        Original annotation is NDArray[np.bool_] | str | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Boolean flag to indicate whether to use raw attribute of adata if present.",
-        title="Use Raw",
+        description="""Use `raw` attribute of `adata` if present. The default behavior is to use `raw` if present.
+        Original annotation is bool | None
+        """,
     )
-    groups: Optional[Any] = Field(
+    groups: typing.Any = Field(
         "all",
-        description="Subset of groups for comparison with original type annotation Literal['all'] | Iterable[str].",
-        title="Groups",
+        description="""Subset of groups for comparison or `all` for all groups. Clarifies behavior with `reference` argument.
+        Original annotation is Literal['all'] | Iterable[str]
+        """,
     )
-    reference: Optional[Any] = Field(
+    reference: str = Field(
         "rest",
-        description="Identifier to specify which group to compare with in statistical tests.",
-        title="Reference",
+        description="""Compare groups to rest or a specific group. Affects gene comparison behavior.
+        Original annotation is str
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to include in the returned tables with default to all genes.",
-        title="N Genes",
+        description="""Number of genes to appear in the returned tables. Defaults to all genes.
+        Original annotation is int | None
+        """,
     )
-    rankby_abs: Optional[Any] = Field(
+    rankby_abs: bool = Field(
         False,
-        description="Flag to rank genes by the absolute value of the score rather than the score itself.",
-        title="Rankby Abs",
+        description="""Rank genes by absolute value of the score. Returned scores are not absolute.
+        Original annotation is bool
+        """,
     )
-    pts: Optional[Any] = Field(
+    pts: bool = Field(
         False,
-        description="Flag to compute the fraction of cells expressing the genes.",
-        title="Pts",
+        description="""Compute the fraction of cells expressing the genes.
+        Original annotation is bool
+        """,
     )
-    key_added: Any = Field(
+    key_added: str | None = Field(
         None,
-        description="Key in adata.uns where information is saved to.",
-        title="Key Added",
+        description="""The key in `adata.uns` where information is stored.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Boolean flag to indicate whether to copy adata or modify it inplace.",
-        title="Copy",
-    )
-    method: Any = Field(
+    # copy: bool = Field(
+    #     False,
+    #     description="""Whether to copy `adata` or modify it inplace.
+    #     Original annotation is bool
+    #     """,
+    # )
+    method: typing.Any = Field(
         None,
-        description="Method used for statistical testing with options like 't-test', 'wilcoxon', 'logreg', and more.",
-        title="Method",
+        description="""Method for gene ranking, default is `t-test`. Other methods available such as `wilcoxon`, `logreg`.
+        Original annotation is _Method | None
+        """,
     )
-    corr_method: Optional[Any] = Field(
+    corr_method: typing.Any = Field(
         "benjamini-hochberg",
-        description="Method for p-value correction used in certain statistical tests.",
-        title="Corr Method",
+        description="""P-value correction method for specific gene ranking methods.
+        Original annotation is _CorrMethod
+        """,
     )
-    tie_correct: Optional[Any] = Field(
+    tie_correct: bool = Field(
         False,
-        description="Flag to enable tie correction for 'wilcoxon' scores.",
-        title="Tie Correct",
+        description="""Use tie correction for specific gene ranking methods.
+        Original annotation is bool
+        """,
     )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Key from adata.layers used in performing statistical tests.",
-        title="Layer",
+        description="""Key from `adata.layers` to use for tests.
+        Original annotation is str | None
+        """,
     )
-    kwds: Any = Field(
-        ...,
-        description="Parameters passed to test methods affecting certain sklearn.linear_model.LogisticRegression parameters.",
-        title="Kwds",
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Parameters passed to test methods, influencing logistic regression behavior.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.rank_genes_groups")
     _products_original: list[str] = PrivateAttr(
@@ -563,53 +640,61 @@ class ScTlRankGenesGroups(BaseAPI):
 
 class ScTlFilterRankGenesGroups(BaseAPI):
     """
-    Filter out genes based on two criteria: log fold change and fraction of genes expressing the gene within and outside the 'groupby' categories. See the function scanpy.tl.rank_genes_groups. Results are stored in adata.uns[key_added] (default: 'rank_genes_groups_filtered'). To preserve the original structure of adata.uns['rank_genes_groups'], filtered genes are set to NaN.
+    Filter out genes based on two criteria: log fold change and fraction of genes expressing the gene within and outside the `groupby` categories. Results stored in `adata.uns[key_added]` (default: \'rank_genes_groups_filtered\').
     """
 
-    adata: Any = Field(
-        ...,
-        description="AnnData is the original type annotation for this parameter.",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""No description available.
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="A string that may or may not be provided as an input.",
-        title="Key",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="A string that may or may not be provided as an input.",
-        title="Groupby",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="A boolean value or None which determines whether to use raw data or not.",
-        title="Use Raw",
+        description="""No description available.
+        Original annotation is bool | None
+        """,
     )
-    key_added: Optional[Any] = Field(
+    key_added: str = Field(
         "rank_genes_groups_filtered",
-        description="A string indicating the key to be added.",
-        title="Key Added",
+        description="""No description available.
+        Original annotation is str
+        """,
     )
-    min_in_group_fraction: Optional[Any] = Field(
+    min_in_group_fraction: float = Field(
         0.25,
-        description="A floating-point number representing a fraction.",
-        title="Min In Group Fraction",
+        description="""No description available.
+        Original annotation is float
+        """,
     )
-    min_fold_change: Optional[Any] = Field(
+    min_fold_change: float = Field(
         1,
-        description="A floating-point number representing the minimum fold change.",
-        title="Min Fold Change",
+        description="""No description available.
+        Original annotation is float
+        """,
     )
-    max_out_group_fraction: Optional[Any] = Field(
+    max_out_group_fraction: float = Field(
         0.5,
-        description="A floating-point number representing the maximum out group fraction.",
-        title="Max Out Group Fraction",
+        description="""No description available.
+        Original annotation is float
+        """,
     )
-    compare_abs: Optional[Any] = Field(
+    compare_abs: bool = Field(
         False,
-        description="A boolean parameter that decides whether to compare absolute values of log fold change.",
-        title="Compare Abs",
+        description="""If `True`, compare absolute values of log fold change with `min_fold_change`.
+        Original annotation is bool
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.filter_rank_genes_groups")
     _products_original: list[str] = PrivateAttr(
@@ -620,49 +705,61 @@ class ScTlFilterRankGenesGroups(BaseAPI):
 
 class ScTlMarkerGeneOverlap(BaseAPI):
     """
-    Calculate an overlap score between data-derived marker genes and provided markers. Marker gene overlap scores can be quoted as overlap counts, overlap coefficients, or Jaccard indices. The method returns a pandas dataframe which can be used to annotate clusters based on marker gene overlaps. This function was written by Malte Luecken.
+    Calculate an overlap score between data-derived marker genes and provided markers. The method returns a pandas dataframe which can be used to annotate clusters based on marker gene overlaps.
     """
 
-    adata: Any = Field(..., description="The annotated data matrix.", title="Adata")
-    reference_markers: Any = Field(
-        ...,
-        description="A marker gene dictionary object where keys are cell identity names and values are sets or lists of strings corresponding to adata.var_name.",
-        title="Reference Markers",
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix.
+        """,
     )
-    key: Optional[Any] = Field(
+    reference_markers: dict[str, set] | dict[str, list] = Field(
+        Ellipsis,
+        description="""A marker gene dictionary object. Keys should be strings with the cell identity name and values are sets or lists of strings which match format of `adata.var_name`.
+        Original annotation is dict[str, set] | dict[str, list]
+        """,
+    )
+    key: str = Field(
         "rank_genes_groups",
-        description="The key in adata.uns where the rank_genes_groups output is stored, default is 'rank_genes_groups'.",
-        title="Key",
+        description="""The key in `adata.uns` where the rank_genes_groups output is stored. By default this is `\'rank_genes_groups`\'.
+        Original annotation is str
+        """,
     )
-    method: Optional[Any] = Field(
+    method: typing.Any = Field(
         "overlap_count",
-        description="Method to calculate marker gene overlap, with options like 'overlap_count', 'overlap_coef', and 'jaccard'.",
-        title="Method",
+        description="""Method to calculate marker gene overlap. `\'overlap_count\'` uses the intersection of the gene set, `\'overlap_coef\'` uses the overlap coefficient, and `\'jaccard\'` uses the Jaccard index.
+        Original annotation is _Method
+        """,
     )
-    normalize: Any = Field(
+    normalize: Literal["reference", "data"] | None = Field(
         None,
-        description="Normalization option for marker gene overlap output, dependent on the method chosen.",
-        title="Normalize",
+        description="""Normalization option for the marker gene overlap output. This parameter can only be set when `method` is set to `\'overlap_count\'`.
+        Original annotation is Literal['reference', 'data'] | None
+        """,
     )
-    top_n_markers: Any = Field(
+    top_n_markers: int | None = Field(
         None,
-        description="Number of top data-derived marker genes to use, default is 100, can be overridden by adj_pval_threshold.",
-        title="Top N Markers",
+        description="""The number of top data-derived marker genes to use. By default the top 100 marker genes are used. If `adj_pval_threshold` is set along with `top_n_markers`, then `adj_pval_threshold` is ignored.
+        Original annotation is int | None
+        """,
     )
-    adj_pval_threshold: Any = Field(
+    adj_pval_threshold: float | None = Field(
         None,
-        description="Significance threshold on adjusted p-values to select marker genes, applicable when p-values calculated by sc.tl.rank_genes_groups().",
-        title="Adj Pval Threshold",
+        description="""A significance threshold on the adjusted p-values to select marker genes. This can only be used when adjusted p-values are calculated by `sc.tl.rank_genes_groups()`.
+        Original annotation is float | None
+        """,
     )
-    key_added: Optional[Any] = Field(
+    key_added: str = Field(
         "marker_gene_overlap",
-        description="Name of the field in .uns that will store the marker overlap scores.",
-        title="Key Added",
+        description="""Name of the `.uns` field that will contain the marker overlap scores.
+        Original annotation is str
+        """,
     )
-    inplace: Optional[Any] = Field(
+    inplace: bool = Field(
         False,
-        description="Option to return a marker gene dataframe or store it directly in adata.uns.",
-        title="Inplace",
+        description="""Return a marker gene dataframe or store it inplace in `adata.uns`.
+        Original annotation is bool
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.marker_gene_overlap")
     _products_original: list[str] = PrivateAttr(
@@ -673,64 +770,73 @@ class ScTlMarkerGeneOverlap(BaseAPI):
 
 class ScTlScoreGenes(BaseAPI):
     """
-    Score a set of genes by calculating the average expression after subtracting the average expression of a reference set of genes, sampled from a gene pool. The method is based on the approach in Seurat by Satija (2015) and has been implemented for Scanpy by Davide Cittaro.
+    Score a set of genes. The score is the average expression of a set of genes after subtraction by the average expression of a reference set of genes. Parameters include annotated data matrix, gene list, control as reference, number of reference genes, gene pool, number of expression level bins, score name, random seed, copy option, using raw data, and layer key.
     """
 
-    adata: Any = Field(
-        ...,
-        description="The annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    gene_list: Any = Field(
-        ...,
-        description="The list of gene names used for score calculation. Original type annotation: Sequence[str] | pd.Index[str]",
-        title="Gene List",
+    gene_list: typing.Any = Field(
+        Ellipsis,
+        description="""List of gene names used for score calculation.
+        Original annotation is Sequence[str] | pd.Index[str]
+        """,
     )
-    ctrl_as_ref: Optional[Any] = Field(
+    ctrl_as_ref: bool = Field(
         True,
-        description="Allow the algorithm to use the control genes as reference. Will be changed to `False` in scanpy 2.0. Original type annotation: bool",
-        title="Ctrl As Ref",
+        description="""Allow using control genes as reference, set to False in Scanpy 2.0.
+        Original annotation is bool
+        """,
     )
-    ctrl_size: Optional[Any] = Field(
+    ctrl_size: int = Field(
         50,
-        description="Number of reference genes to be sampled from each bin. If `len(gene_list)` is not too low, you can set `ctrl_size=len(gene_list)`. Original type annotation: int",
-        title="Ctrl Size",
+        description="""Number of reference genes to sample from each bin.
+        Original annotation is int
+        """,
     )
-    gene_pool: Any = Field(
+    gene_pool: typing.Any = Field(
         None,
-        description="Genes for sampling the reference set. Default is all genes. Original type annotation: Sequence[str] | pd.Index[str] | None",
-        title="Gene Pool",
+        description="""Genes for sampling the reference set, default is all genes.
+        Original annotation is Sequence[str] | pd.Index[str] | None
+        """,
     )
-    n_bins: Optional[Any] = Field(
+    n_bins: int = Field(
         25,
-        description="Number of expression level bins for sampling. Original type annotation: int",
-        title="N Bins",
+        description="""Number of expression level bins for sampling.
+        Original annotation is int
+        """,
     )
-    score_name: Optional[Any] = Field(
+    score_name: str = Field(
         "score",
-        description="Name of the field to be added in `.obs`. Original type annotation: str",
-        title="Score Name",
+        description="""Name of the field to be added in `.obs`.
+        Original annotation is str
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="The random seed for sampling. Original type annotation: _LegacyRandom",
-        title="Random State",
+        description="""Random seed for sampling.
+        Original annotation is _LegacyRandom
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Copy `adata` or modify it inplace. Original type annotation: bool",
-        title="Copy",
-    )
-    use_raw: Any = Field(
+    # copy: bool = Field(
+    #     False,
+    #     description="""Option to copy `adata` or modify it inplace.
+    #     Original annotation is bool
+    #     """,
+    # )
+    use_raw: bool | None = Field(
         None,
-        description="Whether to use `raw` attribute of `adata`. Defaults to `True` if `.raw` is present. Default value changed from `False` to `None` in version 1.4.5. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Option to use `raw` attribute of `adata`, defaults to True if `.raw` is present.
+        Original annotation is bool | None
+        """,
     )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Key from `adata.layers` whose value will be used to perform tests on. Original type annotation: str | None",
-        title="Layer",
+        description="""Key from `adata.layers` to perform tests on.
+        Original annotation is str | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.score_genes")
     _products_original: list[str] = PrivateAttr(default=['data.obs["score"]'])
@@ -742,19 +848,29 @@ class ScTlScoreGenesCellCycle(BaseAPI):
     Score cell cycle genes :cite:p:`Satija2015`. Given two lists of genes associated to S phase and G2M phase, calculates scores and assigns a cell cycle phase (G1, S or G2M). See :func:`~scanpy.tl.score_genes` for more explanation.
     """
 
-    adata: Any = Field(..., description="The annotated data matrix.", title="Adata")
-    s_genes: Any = Field(
-        ..., description="List of genes associated with S phase.", title="S Genes"
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix.
+        """,
     )
-    g2m_genes: Any = Field(
-        ..., description="List of genes associated with G2M phase.", title="G2M Genes"
+    s_genes: typing.Any = Field(
+        Ellipsis,
+        description="""List of genes associated with S phase.
+        Original annotation is Sequence[str]
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Copy `adata` or modify it inplace.",
-        title="Copy",
+    g2m_genes: typing.Any = Field(
+        Ellipsis,
+        description="""List of genes associated with G2M phase.
+        Original annotation is Sequence[str]
+        """,
     )
+    # copy: bool = Field(
+    #     False,
+    #     description="""Copy `adata` or modify it inplace.
+    #     Original annotation is bool
+    #     """,
+    # )
     _api_name: str = PrivateAttr(default="sc.tl.score_genes_cell_cycle")
     _products_original: list[str] = PrivateAttr(
         default=['data.obs["S_score"]', 'data.obs["G2M_score"]', 'data.obs["phase"]']
@@ -764,66 +880,79 @@ class ScTlScoreGenesCellCycle(BaseAPI):
 
 class ScTlDrawGraph(BaseAPI):
     """
-    Force-directed graph drawing: An alternative to tSNE that often preserves the topology of the data better. This method requires running scanpy.pp.neighbors first. The default layout uses the package 'fa2-modified', which can be installed via 'pip install fa2-modified'. Force-directed graph drawing describes a class of algorithms for visualizing graphs and has been suggested for visualizing single-cell data. Various layouts implemented in igraph are available, with similar approaches used by other studies.
+    Force-directed graph drawing alternative to tSNE that often preserves the data topology. Requires running scanpy.pp.neighbors first. Offers multiple layout options and can be used to visualize single-cell data.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    layout: Optional[Any] = Field(
+    layout: typing.Any = Field(
         "fa",
-        description="'fa' (`ForceAtlas2`) or any valid `igraph layout`. Specify layout options like 'fr', 'grid_fr', 'kk', 'lgl', 'drl', and 'rt'. Original type annotation: _Layout",
-        title="Layout",
+        description="""\'fa\' (ForceAtlas2) or any valid igraph layout like \'fr\' (Fruchterman Reingold), \'grid_fr\' (Grid Fruchterman Reingold), \'kk\' (Kamadi Kawai), \'lgl\' (Large Graph), \'drl\' (Distributed Recursive Layout), \'rt\' (Reingold Tilford tree layout).
+        Original annotation is _Layout
+        """,
     )
-    init_pos: Any = Field(
+    init_pos: str | bool | None = Field(
         None,
-        description="`'paga'`/`True`, `None`/`False`, or any valid 2d-`.obsm` key. Use precomputed coordinates for initialization. If `False`/`None`, initialize randomly. Original type annotation: str | bool | None",
-        title="Init Pos",
+        description="""Defines precomputed coordinates for initialization or random initialization.
+        Original annotation is str | bool | None
+        """,
     )
-    root: Any = Field(
+    root: int | None = Field(
         None,
-        description="Root for tree layouts. Original type annotation: int | None",
-        title="Root",
+        description="""Root for tree layouts.
+        Original annotation is int | None
+        """,
     )
-    random_state: Optional[Any] = Field(
+    random_state: typing.Any = Field(
         0,
-        description="For layouts with random initialization like 'fr', change this to use different initial states for the optimization. If `None`, no seed is set. Original type annotation: _LegacyRandom",
-        title="Random State",
+        description="""For layouts with random initialization, changes the initial states for optimization.
+        Original annotation is _LegacyRandom
+        """,
     )
-    n_jobs: Any = Field(
+    n_jobs: int | None = Field(
         None,
-        description="No description available. Original type annotation: int | None",
-        title="N Jobs",
+        description="""No description available.
+        Original annotation is int | None
+        """,
     )
-    adjacency: Any = Field(
+    adjacency: typing.Any = Field(
         None,
-        description="Sparse adjacency matrix of the graph, defaults to neighbors connectivities. Original type annotation: spmatrix | None",
-        title="Adjacency",
+        description="""Sparse adjacency matrix of the graph, defaults to neighbors connectivities.
+        Original annotation is SpBase | None
+        """,
     )
-    key_added_ext: Any = Field(
+    key_added_ext: str | None = Field(
         None,
-        description="By default, append `layout`. Original type annotation: str | None",
-        title="Key Added Ext",
+        description="""By default, append \'layout\'.
+        Original annotation is str | None
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Specify where to look for connectivities. Original type annotation: str | None",
-        title="Neighbors Key",
+        description="""Specifies where to look for connectivities in the data matrix.
+        Original annotation is str | None
+        """,
     )
-    obsp: Any = Field(
+    obsp: str | None = Field(
         None,
-        description="Use .obsp[obsp] as adjacency. Cannot specify both `obsp` and `neighbors_key` at the same time. Original type annotation: str | None",
-        title="Obsp",
+        description="""Specifies the adjacency matrix to be used. Cannot specify both obsp and neighbors_key simultaneously.
+        Original annotation is str | None
+        """,
     )
-    copy_: Optional[Any] = Field(
-        False,
-        alias="copy",
-        description="Return a copy instead of writing to adata. Original type annotation: bool",
-        title="Copy",
+    # copy: bool = Field(
+    #     False,
+    #     description="""Returns a copy instead of modifying the original data.
+    #     Original annotation is bool
+    #     """,
+    # )
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
     _api_name: str = PrivateAttr(default="sc.tl.draw_graph")
     _products_original: list[str] = PrivateAttr(
         default=['data.uns["draw_graph"]', 'data.obsm["X_draw_graph_fa"]']

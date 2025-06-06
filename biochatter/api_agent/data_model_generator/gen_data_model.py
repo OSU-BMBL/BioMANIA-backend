@@ -1,9 +1,10 @@
+from __future__ import annotations
 import os
 import inspect
 import json
 import re
-from types import MappingProxyType, ModuleType
-from typing import Any, Callable
+from types import MappingProxyType
+from typing import Any, get_origin, get_args, Union
 from copy import deepcopy
 import argparse
 import importlib
@@ -14,9 +15,11 @@ load_dotenv()
 
 from docstring_parser import parse
 import libcst as cst
+import libcst.matchers as m
 from pydantic import Field, create_model, PrivateAttr
 from pydantic.fields import FieldInfo
 from importlib.metadata import version
+from types import NoneType
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
@@ -30,8 +33,11 @@ from datamodel_code_generator import DataModelType, PythonVersion
 from datamodel_code_generator.model import get_data_model_types
 from datamodel_code_generator.parser.jsonschema import JsonSchemaParser
 
-from .base.agent_abc import BaseAPI
-from .base.utils import get_data_model_name
+from jinja2 import Environment, FileSystemLoader
+import warnings
+
+from ..base.agent_abc import BaseAPI
+from ..base.utils import get_data_model_name
 
 def get_py_version() -> PythonVersion:
     """Get the Python version.
@@ -150,21 +156,24 @@ def data_model_to_py(data_model: type[BaseAPI], additional_imports: list[str], n
     return codes
 
 def simplify_desc(
-    fields: dict[str, tuple[type, FieldInfo] | str], 
+    api_data: dict, 
     llm: BaseChatModel,
 ) -> dict[str, tuple[Any, Field]]:
     """Summarize the descriptions of multiple fields.
     """
-    _fields = {field_name: str for field_name in fields.keys()}
+    output_format_annotations = {
+        "doc": str,
+    }
+    desc = {
+        "doc": api_data['description'],
+    }
+    for field in api_data['fields']:
+        output_format_annotations[field['name']] = str
+        desc[field['name']] = field['description']
+
     output_format = create_model(
-        "OutputFormat", **_fields,  # type: ignore
+        "OutputFormat", **output_format_annotations,  # type: ignore
     )
-    desc = {}
-    for key, value in fields.items():
-        if isinstance(list(fields.values())[0], tuple):
-            desc[key] = value[1].description
-        else:
-            desc[key] = value
 
     parser = PydanticOutputParser(pydantic_object=output_format)
     prompt = ChatPromptTemplate([
@@ -194,17 +203,16 @@ def simplify_desc(
             correct_parser = RetryOutputParser.from_llm(parser=parser, llm=llm, max_retries=3)
             result: dict = correct_parser.parse_with_prompt(response.content, prompt)
         except OutputParserException as e:
-            raise e
+            print(f"The descriptions of API or arguments of {api_data['name']} are not summarized correctly. Please summarize them manually.")
+            print(f"The error is: {e}")
+            return api_data
         
-    for key, value in result.items():
-        if isinstance(list(fields.values())[0], tuple):
-            annotation, field_info = fields[key]
-            field_info.description = value
-            fields[key] = (annotation, field_info)
-        else:
-            fields[key] = value
+    new_api_data = deepcopy(api_data)
+    new_api_data['description'] = result['doc']
+    for i in range(len(new_api_data['fields'])):
+        new_api_data['fields'][i]['description'] = result[new_api_data['fields'][i]['name']]
 
-    return fields
+    return new_api_data
 
 def add_tools_dict(codes: str, data_models: list[type[BaseAPI]]) -> str:
     """Add TOOLS_DICT to the end of the code using libcst.
@@ -324,20 +332,23 @@ def apis_to_data_models(
 
             # Determine default value
             # If no default, we use `...` indicating a required field
-            if param.default is not inspect.Parameter.empty:
-                default_value = param.default
-
-                # Convert MappingProxyType to a dict for JSON compatibility
-                if isinstance(default_value, MappingProxyType):
-                    default_value = dict(default_value)
-
-                # Handle non-JSON-compliant float values by converting to string
-                if default_value in [float("inf"), float("-inf"), float("nan"), float("-nan")]:
-                    default_value = str(default_value)
+            if param_name == _api['data_name']:
+                default_value = "data"
             else:
-                default_value = ...  # No default means required
+                if param.default is not inspect.Parameter.empty:
+                    default_value = param.default
 
-            # For now, all parameter types are Any
+                    # Convert MappingProxyType to a dict for JSON compatibility
+                    if isinstance(default_value, MappingProxyType):
+                        default_value = dict(default_value)
+
+                    # Handle non-JSON-compliant float values by converting to string
+                    if default_value in [float("inf"), float("-inf"), float("nan"), float("-nan")]:
+                        default_value = str(default_value)
+                else:
+                    default_value = ...  # No default means required
+            
+            # Jiahang (TODO):  
             annotation = Any
 
             # Append the original annotation as a note in the description if
@@ -405,7 +416,330 @@ def get_output_path(package_name: str, api_dict_name: str, as_module: bool = Fal
     else:
         return f"biochatter/api_agent/python/{package_name}/{api_dict_name}.py"
 
+def escape_str(s: str) -> str:
+    """Escape strings. 
+    Jiahang (TODO): is there any better solution to auto-escape strings?
+    """
+    s = ' '.join(s.strip().splitlines())
+    s = s.replace('\\', '\\\\')
+    s = s.replace('\n', '\\n')
+    s = s.replace('\t', '\\t')
+    s = s.replace('\r', '\\r')
+    s = s.replace('\b', '\\b')
+    s = s.replace('\f', '\\f')
+    s = s.replace('\v', '\\v')
+    s = s.replace('\a', '\\a')
+    s = s.replace('"', '\\"')
+    s = s.replace("'", "\\'")
+    
+    return s
+
+def escape_desc(api_data: dict) -> dict:
+    api_data['description'] = escape_str(api_data['description'])
+    for field in api_data['fields']:
+        field['description'] = escape_str(field['description'])
+    return api_data
+
+def _apis_to_data_models_jinja(api_dict: dict[str, dict]) -> str:
+    
+    base_attributes = set(dir(BaseAPI))
+    apis = []
+
+    llm = init_chat_model(os.environ.get("MODEL"), model_provider="openai", temperature=0.7)
+    
+    for api_name, _api in tqdm(api_dict.items()):
+        if "_deprecated" in _api and _api['_deprecated']:
+            continue
+        assert 'products' in _api and 'data_name' in _api, \
+            "configs should contain 'products' and 'data_name'."
+        api = _api['api']
+
+        # Parse docstring for parameter descriptions
+        doc = inspect.getdoc(api) or ""
+        parsed_doc = parse(doc)
+        doc_params = {p.arg_name: p.description or "No description available." for p in parsed_doc.params}
+
+        sig = inspect.signature(api)
+        fields = []
+        for param_name, param in sig.parameters.items():
+            # Skip *args and **kwargs for now
+            if param_name in ("args", "kwargs"):
+                continue
+
+            # Fetch docstring description or fallback
+            description = doc_params.get(param_name, "No description available.")
+            description = ' '.join(description.strip().splitlines())
+
+            # Determine default value
+            # If no default, we use `...` indicating a required field
+        
+            if param.default is not inspect.Parameter.empty:
+                default_value = param.default
+                default_value_expr = cst.parse_expression(str(default_value))
+                default_value_module = cst.parse_module(str(default_value))
+
+                # if isinstance(default_value_expr, cst.Integer):
+                #     annotation = int
+                # elif isinstance(default_value_expr, cst.Float):
+                #     annotation = float
+                # elif isinstance(default_value_expr, cst.SimpleString):
+                #     annotation = str
+                # elif isinstance(default_value_expr, cst.List):
+                #     annotation = list[Any]
+                # elif isinstance(default_value_expr, cst.Tuple):
+                #     annotation = tuple[Any, ...]
+                # elif isinstance(default_value_expr, cst.Set):
+                #     annotation = set[Any]
+                # elif isinstance(default_value_expr, cst.Dict):
+                #     annotation = dict[Any, Any]
+                # elif default_value in ["True", "False"]: # libcst does not support bool type
+                #     annotation = bool
+                # elif default_value is None:
+                #     annotation = Any | None
+                # elif isinstance(default_value_expr, cst.Name):
+                #     default_value = f'"{default_value_module.code}"'
+                #     annotation = Any
+                # else:
+                #     warnings.warn(f"Unrecognized default value type: {default_value}, skip this arg {param_name}.")
+                #     continue
+
+                # # Convert MappingProxyType to a dict for JSON compatibility
+                # elif isinstance(default_value_expr, cst.Dict):
+                #     default_value = default_value_module.code
+
+                # Handle non-JSON-compliant float values by converting to string
+                # elif default_value in [float("inf"), float("-inf"), float("nan"), float("-nan")]:
+                #     default_value = str(default_value)
+                #     default_value = f'"{default_value}"'
+
+            else:
+                default_value = ...  # No default means required
+            
+            # annotation = Any
+
+            # # If default_value is None, parameter can be Optional
+            # # If not required, mark as Optional[Any]
+            # if default_value is None:
+            #     annotation = Any | None
+
+
+            # Jiahang (TODO): may deprecate this part.
+            # If field name conflicts with BaseModel attributes, alias it
+            # field_name = param_name
+            # alias = None
+            # if param_name in base_attributes:
+            #     alias_name = param_name + "_param"
+            #     alias = param_name
+            #     field_name = alias_name
+            
+            # Prepare field kwargs
+            field_kwargs = {
+                "name": field_name,
+                "description": escape_str(description), 
+                "annotation": annotation,
+                "default": default_value, 
+                "original_annotation": param.annotation if param.annotation is not inspect.Parameter.empty else None,
+                "alias": alias,
+            }
+
+            fields.append(field_kwargs)
+
+        # try:
+        #     fields = simplify_desc(fields, llm)
+        #     doc = simplify_desc({"doc": parsed_doc.description}, llm)['doc']
+        # except OutputParserException as e:
+        #     doc = parsed_doc.description
+        #     print(f"The descriptions of API or arguments of {api_name} are not summarized correctly. Please summarize them manually.")
+
+        doc = ' '.join(parsed_doc.description.strip().splitlines())
+        apis.append({
+            "name": escape_str(get_data_model_name(api_name)),
+            "description": escape_str(doc),
+            "fields": fields,
+            "products": _api['products'],
+            "data_name": _api['data_name'],
+        })
+
+
+    env = Environment(loader=FileSystemLoader("biochatter/api_agent/data_model_generator"))
+    template = env.get_template("data_model.jinja")
+    codes = template.render(apis=apis)
+
+    return codes
+
+def is_python_builtin_type(type_annotation) -> bool:
+    """
+    Check if a type is a Python built-in type only.
+    Only these types are considered recognizable:
+    - Basic types: int, float, str, bool
+    - Container types: list, dict, set, tuple
+    - None
+    - Any
+    """
+    # Handle None and Any
+    if type_annotation is None or type_annotation is Any:
+        return True
+        
+    # Get the origin type for generic types
+    origin = get_origin(type_annotation)
+    if origin is not None:
+        # For container types (list, dict, set, tuple), check their type arguments
+        if origin in (list, dict, set, tuple):
+            args = get_args(type_annotation)
+            # For dict, check both key and value types
+            if origin is dict:
+                return all(is_python_builtin_type(arg) for arg in args)
+            # For other containers, check their element type
+            return is_python_builtin_type(args[0])
+        # For Union types, check all possible types
+        elif origin is Union:
+            return all(is_python_builtin_type(arg) for arg in get_args(type_annotation))
+        return False
+
+    # Check if it's a built-in type
+    return type_annotation in (int, float, str, bool, list, dict, set, tuple)      
+
+def apis_to_data_models_jinja(api_dict: dict[str, dict]) -> str:
+    apis = []
+    llm = init_chat_model(
+        os.environ.get("MODEL"), 
+        model_provider="openai", 
+        temperature=0.7,
+    )
+    type_checker = init_chat_model(
+        os.environ.get("MODEL"), 
+        model_provider="openai", 
+        temperature=0.7,
+    )
+
+    base_attributes = set(dir(BaseAPI))
+
+    for api_name, _api in tqdm(api_dict.items()):
+        if "_deprecated" in _api and _api['_deprecated']:
+            continue
+        assert 'products' in _api and 'data_name' in _api, \
+            "configs should contain 'products' and 'data_name'."
+        api = _api['api']
+
+        # Parse docstring for parameter descriptions
+        doc = inspect.getdoc(api) or ""
+        parsed_doc = parse(doc)
+        doc_params = {p.arg_name: p.description or "No description available." for p in parsed_doc.params}
+
+        sig = inspect.signature(api)
+        fields = []
+        for param_name, param in sig.parameters.items():
+            # Skip *args and **kwargs for now
+
+            if param_name in ("args", "kwargs"):
+                continue
+            # Fetch docstring description or fallback
+            description = doc_params.get(param_name, "No description available.")
+            description = ' '.join(description.strip().splitlines())
+
+            # Determine type annotation
+            # Jiahang (TODO): this llm invoke with the requirements of 
+            # error correct, retry, etc., should be unified as they are
+            # used in many places.
+            # Jiahang (TODO): extract prompts into a separate file.
+            # Jiahang (TODO, high priority): weird, why str annotation can fix the prediction into
+            # correct str "data", but typing.Any annotation will lead to random generation like
+            # a dict {}? how much the type annotation matters?
+
+            if param_name == _api['data_name']:
+                annotation = "str"
+            elif param.annotation is not inspect.Signature.empty:
+                prompt = ChatPromptTemplate([
+                    ("system", "You are a python function type checker. You are given a type annotation of an argument. You need to check if the type annotation is recognizable. Recognizable annotations include: Built-in types, such as int, float, str, bool, list, dict, set, tuple, and Any. These also include union and nested combination of basic types. If the type annotation is not recognizable. Unrecognizable annotations includes custom types, such as class, function, etc. Note that, combination of recognizable and unrecognizable types is also unrecognizable. If type is recognizable, return True. If not, return False. You are only required to return True or False, without any other text."),
+                    ("user", "Type annotation: {annotation}"),
+                ])
+                response = type_checker.invoke(prompt.format(annotation=param.annotation))
+                if response.content.strip() in ["True", "true", "True.", "true."]:
+                    annotation = param.annotation
+                else:
+                    annotation = Any # Jiahang (TODO): is it a good practice? shold we use str?
+            else:
+                annotation = Any
+
+            # Determine default value
+            # If no default, we use `...` indicating a required field
+            # Jiahang (TODO, high priority): if data input (argname=_api['data_name'] and argval='data) 
+            # is fixed, why not set it to a private one since LLM dont need to predict it?
+            if param_name == _api['data_name']:
+                default_value = '"data"'
+            elif param.default is not inspect.Signature.empty:
+                # Jiahang (TODO): it seems that not all basic types are supported by openai,
+                # even though they are supported by pydantic.
+                basic_types = [int, float, bool, list, dict, set, tuple, NoneType]  
+                if param.default in \
+                    [float("inf"), float("-inf"), float("nan"), float("-nan")]:
+                    default_value = f'float("{param.default}")'
+                elif type(param.default) in basic_types:
+                    default_value = param.default
+                else:
+                    # Jiahang (TODO): str() here is to avoid type error of escape_str.
+                    # it looks good for now. 
+                    default_value = f'"{escape_str(str(param.default))}"'
+            else:
+                default_value = ...  # No default means required
+
+            # Determine field name and alias
+            # Jiahang (TODO): how to handle alias? it now has bugs. there are some 
+            # warnings of pydantic when internal fields are shadowed, such as 'copy' arg.
+            field_name = param_name
+            alias = None
+            # if param_name in base_attributes:
+            #     alias_name = param_name + "_param"
+            #     alias = param_name
+            #     field_name = alias_name
+            
+            if param_name == _api['data_name']:
+                # special hack, where data is fixed, and LLM only needs to predict str "data"
+                # Jiahang (TODO): if data arg is fixed, why not set it to a prviate one 
+                # since LLM dont need to predict it?
+                original_annotation = None
+            elif param.annotation is not inspect.Signature.empty:
+                original_annotation = param.annotation
+            else:
+                original_annotation = None
+            # Prepare field kwargs
+            field_kwargs = {
+                "name": field_name,
+                "description": description, 
+                "annotation": annotation,
+                "default": default_value, 
+                "original_annotation": original_annotation,
+                "alias": alias,
+            }
+
+            fields.append(field_kwargs)
+
+        api_data = {
+            "name": api_name,
+            "model_name": get_data_model_name(api_name),
+            "description": doc,
+            "fields": fields,
+            "products": _api['products'],
+            "data_name": _api['data_name'],
+        }
+        
+        api_data = simplify_desc(api_data, llm)
+        api_data = escape_desc(api_data)
+        apis.append(api_data)
+
+    env = Environment(
+        loader=FileSystemLoader("biochatter/api_agent/data_model_generator")
+    )
+    template = env.get_template("data_model.jinja")
+    codes = template.render(apis=apis)
+
+    return codes
+        
 if __name__ == "__main__":
+    # Jiahang (TODO): provide class-based API
+    # Jiahang (TODO, high priority): set up types.
+    # Jiahang (TODO, high priority): data_names should have default value as "data"
+    # Jiahang (TODO): now data is str type. should other Any type also be str type?
     parser = argparse.ArgumentParser()
     parser.add_argument("--package_name", type=str, required=True)
     parser.add_argument("--api_dict_name", type=str, required=True)
@@ -434,15 +768,17 @@ if __name__ == "__main__":
             codes = f.read()
         codes = remove_tools_dict(codes)
 
-        data_models, new_codes = apis_to_data_models(additional_apis, need_import=False)
-        tools_list = list(TOOLS_DICT.values()) + data_models
-        new_codes = add_tools_dict(new_codes, tools_list)
+        # data_models, new_codes = apis_to_data_models(additional_apis, need_import=False)
+        new_codes = apis_to_data_models_jinja(additional_apis)
+        # tools_list = list(TOOLS_DICT.values()) + data_models
+        # new_codes = add_tools_dict(new_codes, tools_list)
 
         codes = codes + "\n\n" + new_codes
         
     else:
-        data_models, codes = apis_to_data_models(api_dict)
-        codes = add_tools_dict(codes, data_models)
+        # data_models, codes = apis_to_data_models(api_dict)
+        # codes = add_tools_dict(codes, data_models)
+        codes = apis_to_data_models_jinja(api_dict)
 
     
     with open(output_path, "w") as f:

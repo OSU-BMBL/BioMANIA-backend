@@ -1,149 +1,262 @@
 from __future__ import annotations
-
-from typing import Any, Optional
 from pydantic import ConfigDict, Field, PrivateAttr
-
 from biochatter.api_agent.base.agent_abc import BaseAPI
-
+import typing
+from typing import *
+import collections
 
 class ScPlPaga(BaseAPI):
     """
-    Plot the PAGA graph through thresholding low-connectivity edges. Compute a coarse-grained layout of the data. Reuse this layout for obtaining embeddings with more meaningful global topology. This method uses ForceAtlas2 or igraph's layout algorithms for most layouts.
+    Plot the PAGA graph through thresholding low-connectivity edges, compute a coarse-grained layout, and obtain embeddings with more meaningful global topology. Uses various layout algorithms, including ForceAtlas2 and igraph\'s layouts.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    threshold: Any = Field(
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
+    )
+    threshold: float | None = Field(
         None,
-        description="Defines the threshold for edge weights, below which edges are not drawn.",
-        title="Threshold",
+        description="""Do not draw edges for weights below this threshold, set to 0 for all edges, helps in getting a clearer graph by discarding low-connectivity edges.
+        Original annotation is float | None
+        """,
     )
-    color: Any = Field(
+    color: str | Mapping[str | int, Mapping[Any, float]] | None = Field(
         None,
-        description="Specifies node colors based on gene names or annotations, and can be used to visualize pie charts at nodes.",
-        title="Color",
+        description="""Defines node colors using gene names or obs annotation. Can also plot the degree of the abstracted graph or visualize pie charts at each node.
+        Original annotation is str | Mapping[str | int, Mapping[Any, float]] | None
+        """,
     )
-    layout: Any = Field(
+    layout: typing.Any = Field(
         None,
-        description="Determines the plotting layout for computing positions on the graph.",
-        title="Layout",
+        description="""Computes positions through different layouts like \'ForceAtlas2\', \'Fruchterman-Reingold\', \'Reingold-Tilford\', \'eqally spaced tree\'.
+        Original annotation is _Layout | None
+        """,
     )
-    layout_kwds: Optional[Any] = Field(
-        {}, description="Keywords for the layout.", title="Layout Kwds"
+    layout_kwds: Mapping[str, Any] = Field(
+        "{}",
+        description="""Keywords for the layout.
+        Original annotation is Mapping[str, Any]
+        """,
     )
-    init_pos: Any = Field(
+    init_pos: typing.Any = Field(
         None,
-        description="Initial x and y coordinates for layout initialization.",
-        title="Init Pos",
+        description="""Two-column array with x and y coordinates for initializing the layout.
+        Original annotation is np.ndarray | None
+        """,
     )
-    root: Optional[Any] = Field(
-        0, description="Defines the root node for tree layouts.", title="Root"
+    root: typing.Any = Field(
+        0,
+        description="""Index of the root node for tree layout or list of root node indices. Automatically calculates root vertices if None or empty list.
+        Original annotation is int | str | Sequence[int] | None
+        """,
     )
-    labels: Any = Field(
-        None, description="Node labels for visualization.", title="Labels"
+    labels: str | Sequence[str] | Mapping[str, str] | None = Field(
+        None,
+        description="""Node labels, defaults to group labels stored in categorical data computed by tl.paga if None.
+        Original annotation is str | Sequence[str] | Mapping[str, str] | None
+        """,
     )
-    single_component: Optional[Any] = Field(
+    single_component: bool = Field(
         False,
-        description="Restricts the graph to the largest connected component.",
-        title="Single Component",
+        description="""Restricts to the largest connected component.
+        Original annotation is bool
+        """,
     )
-    solid_edges: Optional[Any] = Field(
+    solid_edges: str = Field(
         "connectivities",
-        description="Key specifying the matrix for solid black edges.",
-        title="Solid Edges",
+        description="""Key specifying the matrix for solid black edges.
+        Original annotation is str
+        """,
     )
-    dashed_edges: Any = Field(
+    dashed_edges: str | None = Field(
         None,
-        description="Key specifying the matrix for dashed grey edges.",
-        title="Dashed Edges",
+        description="""Key specifying the matrix for dashed grey edges, if None, no dashed edges are drawn.
+        Original annotation is str | None
+        """,
     )
-    transitions: Any = Field(
-        None, description="Key specifying the matrix for arrows.", title="Transitions"
-    )
-    fontsize: Any = Field(
-        None, description="Font size for node labels.", title="Fontsize"
-    )
-    fontweight: Optional[Any] = Field(
-        "bold", description="Font weight for text elements.", title="Fontweight"
-    )
-    fontoutline: Any = Field(
+    transitions: str | None = Field(
         None,
-        description="Width of the white outline around fonts.",
-        title="Fontoutline",
+        description="""Key specifying the matrix for arrows, for instance \'transitions_confidence\'.
+        Original annotation is str | None
+        """,
     )
-    text_kwds: Optional[Any] = Field(
-        {}, description="Keywords for text elements.", title="Text Kwds"
+    fontsize: int | None = Field(
+        None,
+        description="""Font size for node labels.
+        Original annotation is int | None
+        """,
     )
-    node_size_scale: Optional[Any] = Field(
-        1.0, description="Scale factor for node sizes.", title="Node Size Scale"
+    fontweight: str = Field(
+        "bold",
+        description="""No description available.
+        Original annotation is str
+        """,
     )
-    node_size_power: Optional[Any] = Field(
+    fontoutline: int | None = Field(
+        None,
+        description="""Width of the white outline around fonts.
+        Original annotation is int | None
+        """,
+    )
+    text_kwds: Mapping[str, Any] = Field(
+        "{}",
+        description="""Keywords for matplotlib axes text.
+        Original annotation is Mapping[str, Any]
+        """,
+    )
+    node_size_scale: float = Field(
+        1.0,
+        description="""Increase or decrease node sizes.
+        Original annotation is float
+        """,
+    )
+    node_size_power: float = Field(
         0.5,
-        description="Influence of group sizes on node radius.",
-        title="Node Size Power",
+        description="""Influence of group sizes on node radius.
+        Original annotation is float
+        """,
     )
-    edge_width_scale: Optional[Any] = Field(
-        1.0, description="Scale factor for edge widths.", title="Edge Width Scale"
+    edge_width_scale: float = Field(
+        1.0,
+        description="""Scale for edge width relative to rcParams[\'lines.linewidth\'].
+        Original annotation is float
+        """,
     )
-    min_edge_width: Any = Field(
-        None, description="Minimum width of solid edges.", title="Min Edge Width"
-    )
-    max_edge_width: Any = Field(
+    min_edge_width: float | None = Field(
         None,
-        description="Maximum width of solid and dashed edges.",
-        title="Max Edge Width",
+        description="""Minimum width of solid edges.
+        Original annotation is float | None
+        """,
     )
-    arrowsize: Optional[Any] = Field(
-        30, description="Size of arrow heads for directed graphs.", title="Arrowsize"
+    max_edge_width: float | None = Field(
+        None,
+        description="""Maximum width of solid and dashed edges.
+        Original annotation is float | None
+        """,
     )
-    title: Any = Field(None, description="Title for the plot.", title="Title")
-    left_margin: Optional[Any] = Field(
-        0.01, description="Left margin specification.", title="Left Margin"
+    arrowsize: int = Field(
+        30,
+        description="""Size of arrow heads for directed graphs.
+        Original annotation is int
+        """,
     )
-    random_state: Optional[Any] = Field(
-        0, description="Seed for random initialization.", title="Random State"
+    title: str | None = Field(
+        None,
+        description="""Provides a title.
+        Original annotation is str | None
+        """,
     )
-    pos: Any = Field(
-        None, description="Coordinates for drawing the graph.", title="Pos"
+    left_margin: float = Field(
+        0.01,
+        description="""No description available.
+        Original annotation is float
+        """,
     )
-    normalize_to_color: Optional[Any] = Field(
+    random_state: int | None = Field(
+        0,
+        description="""Changes initial states for layouts like \'fr\', ensuring reproducibility if not None.
+        Original annotation is int | None
+        """,
+    )
+    pos: typing.Any = Field(
+        None,
+        description="""Two-column array-like coordinates for drawing or path to a .gdf file exported from visualization software.
+        Original annotation is np.ndarray | Path | str | None
+        """,
+    )
+    normalize_to_color: bool = Field(
         False,
-        description="Option to normalize categorical plots to color or groups.",
-        title="Normalize To Color",
+        description="""Whether to normalize categorical plots to color or underlying grouping.
+        Original annotation is bool
+        """,
     )
-    cmap: Any = Field(None, description="Color map for visualization.", title="Cmap")
-    cax: Any = Field(
-        None, description="Matplotlib axes object for colorbar.", title="Cax"
-    )
-    colorbar: Any = Field(
-        None, description="Indicates the presence of a colorbar.", title="Colorbar"
-    )
-    cb_kwds: Optional[Any] = Field(
-        {}, description="Keyword arguments for the colorbar.", title="Cb Kwds"
-    )
-    frameon: Any = Field(
+    cmap: typing.Any = Field(
         None,
-        description="Option to draw a frame around the PAGA graph.",
-        title="Frameon",
+        description="""Color map.
+        Original annotation is str | Colormap | None
+        """,
     )
-    add_pos: Optional[Any] = Field(
-        True, description="Add positions to the PAGA graph.", title="Add Pos"
+    cax: typing.Any = Field(
+        None,
+        description="""Matplotlib axes object for potential colorbar.
+        Original annotation is Axes | None
+        """,
     )
-    export_to_gexf: Optional[Any] = Field(
-        False, description="Export to the gexf format.", title="Export To Gexf"
+    colorbar: typing.Any = Field(
+        None,
+        description="""No description available.
+        """,
     )
-    use_raw: Optional[Any] = Field(
-        True, description="Indicates whether raw data is used.", title="Use Raw"
+    cb_kwds: Mapping[str, Any] = Field(
+        "{}",
+        description="""Keyword arguments for matplotlib.colorbar.Colorbar, like ticks.
+        Original annotation is Mapping[str, Any]
+        """,
     )
-    colors: Any = Field(None, description="No description available.", title="Colors")
-    groups: Any = Field(None, description="No description available.", title="Groups")
-    plot: Optional[Any] = Field(
+    frameon: bool | None = Field(
+        None,
+        description="""Draws a frame around the PAGA graph.
+        Original annotation is bool | None
+        """,
+    )
+    add_pos: bool = Field(
         True,
-        description="Option to create the figure or only compute the layout.",
-        title="Plot",
+        description="""Adds positions to adata.uns[\'paga\'].
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(None, description="Option to display the plot.", title="Show")
-    save: Any = Field(None, description="Option to save the figure.", title="Save")
-    ax: Any = Field(None, description="Matplotlib axes object.", title="Ax")
+    export_to_gexf: bool = Field(
+        False,
+        description="""Exports to gexf format for other visualization programs.
+        Original annotation is bool
+        """,
+    )
+    use_raw: bool = Field(
+        True,
+        description="""No description available.
+        Original annotation is bool
+        """,
+    )
+    colors: typing.Any = Field(
+        None,
+        description="""No description available.
+        """,
+    )
+    groups: typing.Any = Field(
+        None,
+        description="""No description available.
+        """,
+    )
+    plot: bool = Field(
+        True,
+        description="""If False, only computes layout without creating the figure.
+        Original annotation is bool
+        """,
+    )
+    show: bool | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is bool | None
+        """,
+    )
+    # Jiahang (TODO): return_fig only exists in some of pl api, not all.
+    # show and ax don't control save or return figure
+    # save will take some default image name which cannot be controlled by user.
+    # this figure control really sucks.
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If True or a string, saves the figure with inferred file type based on extension.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
+        None,
+        description="""Matplotlib axes object.
+        Original annotation is Axes | None
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.paga")
     _products_original: list[str] = PrivateAttr(default=['data.uns["paga"]["pos"]'])
     _data_name: str = PrivateAttr(default="adata")
@@ -151,122 +264,171 @@ class ScPlPaga(BaseAPI):
 
 class ScPlScatter(BaseAPI):
     """
-    Scatter plot along observations or variables axes. Color the plot using annotations of observations (.obs), variables (.var) or expression of genes (.var_names).
+    Scatter plot along observations or variables axes. Color the plot using annotations of observations, variables, or expression of genes.
     """
 
-    adata: Any = Field(
-        ..., description="Annotated data matrix with type annotation", title="Adata"
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    x: Any = Field(
+    x: str | None = Field(
         None,
-        description="The x coordinate with type annotation of string or None",
-        title="X",
+        description="""x coordinate.
+        Original annotation is str | None
+        """,
     )
-    y: Any = Field(
+    y: str | None = Field(
         None,
-        description="The y coordinate with type annotation of string or None",
-        title="Y",
+        description="""y coordinate.
+        Original annotation is str | None
+        """,
     )
-    color: Any = Field(
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes, or a hex color specification, with possible types including str, ColorLike, Collection[str] or None",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes, or a hex color specification.
+        Original annotation is str | ColorLike | Collection[str | ColorLike] | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Boolean indicating whether to use the raw attribute of adata, defaulting to True if .raw is present",
-        title="Use Raw",
+        description="""Whether to use raw attribute of adata. Defaults to true if .raw is present.
+        Original annotation is bool | None
+        """,
     )
-    layers: Any = Field(
+    layers: typing.Any = Field(
         None,
-        description="Specification of the layer for x, y, and color using the layers attribute of adata if present, with possible types being str, Collection[str], or None",
-        title="Layers",
+        description="""Use the layers attribute of adata if present: specify the layer for x, y and color.
+        Original annotation is str | Collection[str] | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    sort_order: bool = Field(
         True,
-        description="Boolean indicating whether to plot data points with higher values on top for continuous annotations used as color parameter",
-        title="Sort Order",
+        description="""For continuous annotations used as color parameter, plot data points with higher values on top of others.
+        Original annotation is bool
+        """,
     )
-    alpha: Any = Field(None, description="Floating point number or None", title="Alpha")
-    basis: Any = Field(
+    alpha: float | None = Field(
         None,
-        description="String denoting a plotting tool that computed coordinates or None",
-        title="Basis",
+        description="""No description available.
+        Original annotation is float | None
+        """,
     )
-    groups: Any = Field(
+    basis: typing.Any = Field(
         None,
-        description="Restriction to specific categories in categorical observation annotation, with possible types including str, Iterable[str], or None",
-        title="Groups",
+        description="""String that denotes a plotting tool that computed coordinates.
+        Original annotation is _Basis | None
+        """,
     )
-    components: Any = Field(
+    groups: str | Iterable[str] | None = Field(
         None,
-        description="String specifying components for plotting or 'all', with possible types being str, Collection[str], or None",
-        title="Components",
+        description="""Restrict to a few categories in categorical observation annotation. The default is not to restrict to any groups.
+        Original annotation is str | Iterable[str] | None
+        """,
     )
-    projection: Optional[Any] = Field(
-        "2d", description="Projection of plot, either '2d' or '3d'", title="Projection"
+    components: str | Collection[str] | None = Field(
+        None,
+        description="""For instance, [\'1,2\', \'2,3\']. To plot all available components use components=\'all\'.
+        Original annotation is str | Collection[str] | None
+        """,
     )
-    legend_loc: Optional[Any] = Field(
+    projection: typing.Any = Field(
+        "2d",
+        description="""Projection of plot (default: \'2d\').
+        Original annotation is Literal['2d', '3d']
+        """,
+    )
+    legend_loc: typing.Any = Field(
         "right margin",
-        description="Location of legend, with possible values including 'on data', 'right margin', None, or a valid keyword for the loc parameter of matplotlib.legend.Legend",
-        title="Legend Loc",
+        description="""Location of legend, either \'on data\', \'right margin\', None, or a valid keyword for the loc parameter of matplotlib.legend.Legend.
+        Original annotation is _LegendLoc | None
+        """,
     )
-    legend_fontsize: Any = Field(
+    legend_fontsize: typing.Any = Field(
         None,
-        description="Numeric size or string description for legend font size",
-        title="Legend Fontsize",
+        description="""Numeric size in pt or string describing the size.
+        Original annotation is float | _FontSize | None
+        """,
     )
-    legend_fontweight: Any = Field(
+    legend_fontweight: typing.Any = Field(
         None,
-        description="Legend font weight as a numeric value or string, with default to 'bold' or 'normal' based on legend_loc",
-        title="Legend Fontweight",
+        description="""Legend font weight. A numeric value in range 0-1000 or a string. Defaults to \'bold\' if legend_loc == \'on data\', otherwise to \'normal\'.
+        Original annotation is int | _FontWeight | None
+        """,
     )
-    legend_fontoutline: Any = Field(
+    legend_fontoutline: float | None = Field(
         None,
-        description="Line width of the legend font outline in pt or None",
-        title="Legend Fontoutline",
+        description="""Line width of the legend font outline in pt. Draws a white outline using the path effect matplotlib.patheffects.withStroke.
+        Original annotation is float | None
+        """,
     )
-    color_map: Any = Field(
+    color_map: typing.Any = Field(
         None,
-        description="Color map to use for continuous variables, can be a name or matplotlib.colors.Colormap instance",
-        title="Color Map",
+        description="""Color map to use for continuous variables. Can be a name or a matplotlib.colors.Colormap instance.
+        Original annotation is str | Colormap | None
+        """,
     )
-    palette: Any = Field(
+    palette: typing.Any = Field(
         None,
-        description="Colors to use for plotting categorical annotation groups, with various possible types including Cycler, ListedColormap, ColorLike, or Sequence[ColorLike]",
-        title="Palette",
+        description="""Colors to use for plotting categorical annotation groups. The palette can be a valid matplotlib.colors.ListedColormap name, a cycler.Cycler object, a dict mapping categories to colors, or a sequence of colors.
+        Original annotation is Cycler | ListedColormap | ColorLike | Sequence[ColorLike] | None
+        """,
     )
-    frameon: Any = Field(
+    frameon: bool | None = Field(
         None,
-        description="Boolean indicating whether to draw a frame around the scatter plot",
-        title="Frameon",
+        description="""Draw a frame around the scatter plot. Defaults to value set in scanpy.set_figure_params, defaults to true.
+        Original annotation is bool | None
+        """,
     )
-    right_margin: Any = Field(
-        None, description="Floating point number or None", title="Right Margin"
-    )
-    left_margin: Any = Field(
-        None, description="Floating point number or None", title="Left Margin"
-    )
-    size: Any = Field(
+    right_margin: float | None = Field(
         None,
-        description="Point size, automatically computed if None, or a sequence containing the size for each cell",
-        title="Size",
+        description="""No description available.
+        Original annotation is float | None
+        """,
     )
-    marker: Optional[Any] = Field(
-        ".", description="String or sequence of strings for marker", title="Marker"
-    )
-    title: Any = Field(
+    left_margin: float | None = Field(
         None,
-        description="Title for panels as a string or list of strings",
-        title="Title",
+        description="""No description available.
+        Original annotation is float | None
+        """,
     )
-    show: Any = Field(
-        None, description="Boolean indicating whether to show the plot", title="Show"
+    size: float | None = Field(
+        None,
+        description="""Point size. If None, is automatically computed as 120000 / n_cells. Can be a sequence containing the size for each cell.
+        Original annotation is float | None
+        """,
     )
-    save: Any = Field(
-        None, description="Save the figure with True, a string, or None", title="Save"
+    marker: str | Sequence[str] = Field(
+        ".",
+        description="""No description available.
+        Original annotation is str | Sequence[str]
+        """,
     )
-    ax: Any = Field(None, description="A matplotlib axes object or None", title="Ax")
+    title: str | Collection[str] | None = Field(
+        None,
+        description="""Provide title for panels either as string or list of strings.
+        Original annotation is str | Collection[str] | None
+        """,
+    )
+    show: bool | None = Field(
+        None,
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
+    )
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""If true or a string, save the figure. A string is appended to the default filename. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
+        Original annotation is str | bool | None
+        """,
+    )
+    ax: typing.Any = Field(
+        None,
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.scatter")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -277,183 +439,283 @@ class ScPlUmap(BaseAPI):
     Scatter plot in UMAP basis.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    color: Any = Field(
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
+    )
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes.",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes, e.g., `\'ann1\'` or `[\'ann1\', \'ann2\']`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    mask_obs: Any = Field(
-        None, description="No description available.", title="Mask Obs"
-    )
-    gene_symbols: Any = Field(
+    mask_obs: typing.Any = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols.",
-        title="Gene Symbols",
+        description="""No description available.
+        Original annotation is numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None
+        """,
     )
-    use_raw: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Use `.raw` attribute of `adata` for coloring with gene expression.",
-        title="Use Raw",
+        description="""Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Setting this option allows alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    use_raw: bool | None = Field(
+        None,
+        description="""Use `.raw` attribute of `adata` for coloring with gene expression. If `None`, defaults to `True` if `layer` isn\'t provided and `adata.raw` is present.
+        Original annotation is bool | None
+        """,
+    )
+    sort_order: typing.Any = Field(
         True,
-        description="For continuous annotations used as color parameter, plot data points with higher values on top of others.",
-        title="Sort Order",
+        description="""For continuous annotations used as color parameter, plot data points with higher values on top of others.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges: Optional[Any] = Field(False, description="Show edges.", title="Edges")
-    edges_width: Optional[Any] = Field(
-        0.1, description="Width of edges.", title="Edges Width"
-    )
-    edges_color: Optional[Any] = Field(
-        "grey", description="Color of edges.", title="Edges Color"
-    )
-    neighbors_key: Any = Field(
-        None,
-        description="Where to look for neighbors connectivities.",
-        title="Neighbors Key",
-    )
-    arrows: Optional[Any] = Field(
+    edges: typing.Any = Field(
         False,
-        description="Show arrows (deprecated in favour of `scvelo.pl.velocity_embedding`).",
-        title="Arrows",
+        description="""Show edges.
+        Original annotation is <class 'bool'>
+        """,
     )
-    arrows_kwds: Any = Field(
+    edges_width: typing.Any = Field(
+        0.1,
+        description="""Width of edges.
+        Original annotation is <class 'float'>
+        """,
+    )
+    edges_color: typing.Any = Field(
+        "grey",
+        description="""Color of edges. See :func:`~networkx.drawing.nx_pylab.draw_networkx_edges`.
+        Original annotation is str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+        """,
+    )
+    neighbors_key: str | None = Field(
         None,
-        description="Passed to :meth:`~matplotlib.axes.Axes.quiver`.",
-        title="Arrows Kwds",
+        description="""Where to look for neighbors connectivities. If not specified, this looks .obsp[\'connectivities\'] for connectivities (default storage place for pp.neighbors). If specified, this looks .obsp[.uns[neighbors_key][\'connectivities_key\']] for connectivities.
+        Original annotation is str | None
+        """,
     )
-    groups: Any = Field(
+    arrows: typing.Any = Field(
+        False,
+        description="""Show arrows (deprecated in favour of `scvelo.pl.velocity_embedding`).
+        Original annotation is <class 'bool'>
+        """,
+    )
+    arrows_kwds: typing.Any = Field(
         None,
-        description="Restrict to a few categories in categorical observation annotation.",
-        title="Groups",
+        description="""Passed to :meth:`~matplotlib.axes.Axes.quiver`
+        Original annotation is collections.abc.Mapping[str, typing.Any] | None
+        """,
     )
-    components: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="To plot all available components use `components='all'.",
-        title="Components",
+        description="""Restrict to a few categories in categorical observation annotation. The default is not to restrict to any groups.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    dimensions: Any = Field(
+    components: typing.Any = Field(
         None,
-        description="0-indexed dimensions of the embedding to plot as integers.",
-        title="Dimensions",
+        description="""For instance, `[\'1,2\', \'2,3\']`. To plot all available components use `components=\'all\'`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    layer: Any = Field(
+    dimensions: typing.Any = Field(
         None,
-        description="Name of the AnnData object layer that wants to be plotted.",
-        title="Layer",
+        description="""0-indexed dimensions of the embedding to plot as integers. E.g. [(0, 1), (1, 2)]. Unlike `components`, this argument is used in the same way as `colors`, e.g. is used to specify a single plot at a time. Will eventually replace the components argument.
+        Original annotation is tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None
+        """,
     )
-    projection: Optional[Any] = Field(
-        "2d", description="Projection of plot (default: `'2d'`).", title="Projection"
-    )
-    scale_factor: Any = Field(
-        None, description="No description available.", title="Scale Factor"
-    )
-    color_map: Any = Field(
-        None, description="Color map to use for continous variables.", title="Color Map"
-    )
-    cmap: Any = Field(None, description="No description available.", title="Cmap")
-    palette: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Colors to use for plotting categorical annotation groups.",
-        title="Palette",
+        description="""Name of the AnnData object layer that wants to be plotted. By default adata.raw.X is plotted. If `use_raw=False` is set, then `adata.X` is plotted. If `layer` is set to a valid layer name, then the layer is plotted. `layer` takes precedence over `use_raw`.
+        Original annotation is str | None
+        """,
     )
-    na_color: Optional[Any] = Field(
+    projection: typing.Any = Field(
+        "2d",
+        description="""Projection of plot (default: `\'2d\'`).
+        Original annotation is typing.Literal['2d', '3d']
+        """,
+    )
+    scale_factor: float | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is float | None
+        """,
+    )
+    color_map: typing.Any = Field(
+        None,
+        description="""Color map to use for continous variables. Can be a name or a :class:`~matplotlib.colors.Colormap` instance (e.g. `\"magma`\", `\"viridis\"` or `mpl.cm.cividis`), see :meth:`~matplotlib.cm.ColormapRegistry.get_cmap`. If `None`, the value of `mpl.rcParams[\"image.cmap\"]` is used. The default `color_map` can be set using :func:`~scanpy.set_figure_params`.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    cmap: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    palette: typing.Any = Field(
+        None,
+        description="""Colors to use for plotting categorical annotation groups. The palette can be a valid :class:`~matplotlib.colors.ListedColormap` name (`\'Set2\'`, `\'tab20\'`, …), a :class:`~cycler.Cycler` object, a dict mapping categories to colors, or a sequence of colors. Colors must be valid to matplotlib. (see :func:`~matplotlib.colors.is_color_like`). If `None`, `mpl.rcParams[\"axes.prop_cycle\"]` is used unless the categorical variable already has colors stored in `adata.uns[\"{var}_colors\"]`. If provided, values of `adata.uns[\"{var}_colors\"]` will be set.
+        Original annotation is str | collections.abc.Sequence[str] | cycler.Cycler | None
+        """,
+    )
+    na_color: str | tuple[float, ...] = Field(
         "lightgray",
-        description="Color to use for null or masked values.",
-        title="Na Color",
+        description="""Color to use for null or masked values. Can be anything matplotlib accepts as a color. Used for all points if `color=None`.
+        Original annotation is str | tuple[float, ...]
+        """,
     )
-    na_in_legend: Optional[Any] = Field(
+    na_in_legend: typing.Any = Field(
         True,
-        description="If there are missing values, whether they get an entry in the legend.",
-        title="Na In Legend",
+        description="""If there are missing values, whether they get an entry in the legend. Currently only implemented for categorical legends.
+        Original annotation is <class 'bool'>
+        """,
     )
-    size: Any = Field(None, description="Point size.", title="Size")
-    frameon: Any = Field(
-        None, description="Draw a frame around the scatter plot.", title="Frameon"
-    )
-    legend_fontsize: Any = Field(
+    size: typing.Any = Field(
         None,
-        description="Numeric size in pt or string describing the size.",
-        title="Legend Fontsize",
+        description="""Point size. If `None`, is automatically computed as 120000 / n_cells. Can be a sequence containing the size for each cell. The order should be the same as in adata.obs.
+        Original annotation is float | collections.abc.Sequence[float] | None
+        """,
     )
-    legend_fontweight: Optional[Any] = Field(
-        "bold", description="Legend font weight.", title="Legend Fontweight"
-    )
-    legend_loc: Optional[Any] = Field(
-        "right margin", description="Location of legend.", title="Legend Loc"
-    )
-    legend_fontoutline: Any = Field(
+    frameon: bool | None = Field(
         None,
-        description="Line width of the legend font outline in pt.",
-        title="Legend Fontoutline",
+        description="""Draw a frame around the scatter plot. Defaults to value set in :func:`~scanpy.set_figure_params`, defaults to `True`.
+        Original annotation is bool | None
+        """,
     )
-    colorbar_loc: Optional[Any] = Field(
+    legend_fontsize: typing.Any = Field(
+        None,
+        description="""Numeric size in pt or string describing the size. See :meth:`~matplotlib.text.Text.set_fontsize`.
+        Original annotation is typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]
+        """,
+    )
+    legend_fontweight: typing.Any = Field(
+        "bold",
+        description="""Legend font weight. A numeric value in range 0-1000 or a string. Defaults to `\'bold\'` if `legend_loc == \'on data\'`, otherwise to `\'normal\'`. See :meth:`~matplotlib.text.Text.set_fontweight`.
+        Original annotation is typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]
+        """,
+    )
+    legend_loc: typing.Any = Field(
+        "right margin",
+        description="""Location of legend, either `\'on data\'`, `\'right margin\'`, `None`, or a valid keyword for the `loc` parameter of :class:`~matplotlib.legend.Legend`.
+        Original annotation is typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]
+        """,
+    )
+    legend_fontoutline: int | None = Field(
+        None,
+        description="""Line width of the legend font outline in pt. Draws a white outline using the path effect :class:`~matplotlib.patheffects.withStroke`.
+        Original annotation is int | None
+        """,
+    )
+    colorbar_loc: str | None = Field(
         "right",
-        description="Where to place the colorbar for continous variables.",
-        title="Colorbar Loc",
+        description="""Where to place the colorbar for continous variables. If `None`, no colorbar is added.
+        Original annotation is str | None
+        """,
     )
-    vmax: Any = Field(
+    vmax: typing.Any = Field(
         None,
-        description="The value representing the upper limit of the color scale.",
-        title="Vmax",
+        description="""The value representing the upper limit of the color scale. The format is the same as for `vmin`.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    vmin: Any = Field(
+    vmin: typing.Any = Field(
         None,
-        description="The value representing the lower limit of the color scale.",
-        title="Vmin",
+        description="""The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin. vmin can be a number, a string, a function or `None`. If vmin is a string and has the format `pN`, this is interpreted as a vmin=percentile(N). For example vmin=\'p1.5\' is interpreted as the 1.5 percentile. If vmin is function, then vmin is interpreted as the return value of the function over the list of values to plot. For example to set vmin tp the mean of the values to plot, `def my_vmin(values): return np.mean(values)` and then set `vmin=my_vmin`. If vmin is None (default) an automatic minimum value is used as defined by matplotlib `scatter` function. When making multiple plots, vmin can be a list of values, one for each plot. For example `vmin=[0.1, \'p1\', None, my_vmin]`
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    vcenter: Any = Field(
+    vcenter: typing.Any = Field(
         None,
-        description="The value representing the center of the color scale.",
-        title="Vcenter",
+        description="""The value representing the center of the color scale. Useful for diverging colormaps. The format is the same as for `vmin`. Example: ``sc.pl.umap(adata, color=\'TREM2\', vcenter=\'p50\', cmap=\'RdBu_r\')``
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    norm: Any = Field(None, description="No description available.", title="Norm")
-    add_outline: Optional[Any] = Field(
+    norm: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None
+        """,
+    )
+    add_outline: bool | None = Field(
         False,
-        description="If set to True, this will add a thin border around groups of dots.",
-        title="Add Outline",
+        description="""If set to True, this will add a thin border around groups of dots. In some situations this can enhance the aesthetics of the resulting image
+        Original annotation is bool | None
+        """,
     )
-    outline_width: Optional[Any] = Field(
-        [0.3, 0.05],
-        description="Tuple with two width numbers used to adjust the outline.",
-        title="Outline Width",
+    # Jiahang (TODO): openai bug - array schema missing items.
+    # all comments come from this reason. seems that tuple is not supported.
+    # outline_width: tuple[float, float] = Field(
+    #     (0.3, 0.05),
+    #     description="""Tuple with two width numbers used to adjust the outline. The first value is the width of the border color as a fraction of the scatter dot size (default: 0.3). The second value is width of the gap color (default: 0.05).
+    #     Original annotation is tuple[float, float]
+    #     """,
+    # )
+    # outline_color: tuple[str, str] = Field(
+    #     ("black", "white"),
+    #     description="""Tuple with two valid color names used to adjust the add_outline. The first color is the border color (default: black), while the second color is a gap color between the border color and the scatter dot (default: white).
+    #     Original annotation is tuple[str, str]
+    #     """,
+    # )
+    ncols: typing.Any = Field(
+        4,
+        description="""Number of panels per row.
+        Original annotation is <class 'int'>
+        """,
     )
-    outline_color: Optional[Any] = Field(
-        ["black", "white"],
-        description="Tuple with two valid color names used to adjust the add_outline.",
-        title="Outline Color",
-    )
-    ncols: Optional[Any] = Field(
-        4, description="Number of panels per row.", title="Ncols"
-    )
-    hspace: Optional[Any] = Field(
+    hspace: typing.Any = Field(
         0.25,
-        description="Adjust the height of the space between multiple panels.",
-        title="Hspace",
+        description="""Adjust the height of the space between multiple panels.
+        Original annotation is <class 'float'>
+        """,
     )
-    wspace: Any = Field(
+    wspace: float | None = Field(
         None,
-        description="Adjust the width of the space between multiple panels.",
-        title="Wspace",
+        description="""Adjust the width of the space between multiple panels.
+        Original annotation is float | None
+        """,
     )
-    title: Any = Field(
+    title: typing.Any = Field(
         None,
-        description="Provide title for panels either as string or list of strings.",
-        title="Title",
+        description="""Provide title for panels either as string or list of strings, e.g. `[\'title1\', \'title2\', ...]`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    show: Any = Field(
-        None, description="Show the plot, do not return axis.", title="Show"
+    show: bool | None = Field(
+        None,
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None, description="If `True` or a `str`, save the figure.", title="Save"
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | str | None
+        """,
     )
-    ax: Any = Field(None, description="A matplotlib axes object.", title="Ax")
-    return_fig: Any = Field(
-        None, description="Return the matplotlib figure.", title="Return Fig"
+    ax: typing.Any = Field(
+        None,
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is matplotlib.axes._axes.Axes | None
+        """,
     )
-    marker: Optional[Any] = Field(
-        ".", description="No description available.", title="Marker"
+    return_fig: bool | None = Field(
+        None,
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
+    )
+    marker: typing.Any = Field(
+        ".",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[str]
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.umap")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -465,235 +727,281 @@ class ScPlTsne(BaseAPI):
     Scatter plot in tSNE basis.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: <class 'anndata._core.anndata.AnnData'>",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    color: Any = Field(
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes. Original type annotation: str | collections.abc.Sequence[str] | None",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    mask_obs: Any = Field(
+    mask_obs: typing.Any = Field(
         None,
-        description="No description available. Original type annotation: numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None",
-        title="Mask Obs",
+        description="""No description available.
+        Original annotation is numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Use `.raw` attribute of `adata` for coloring with gene expression. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Use `.raw` attribute of `adata` for coloring with gene expression.
+        Original annotation is bool | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    sort_order: typing.Any = Field(
         True,
-        description="For continuous annotations used as color parameter, plot data points with higher values on top of others. Original type annotation: <class 'bool'>",
-        title="Sort Order",
+        description="""For continuous annotations used as color parameter, plot data points with higher values on top of others.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges: Optional[Any] = Field(
+    edges: typing.Any = Field(
         False,
-        description="Show edges. Original type annotation: <class 'bool'>",
-        title="Edges",
+        description="""Show edges.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges_width: Optional[Any] = Field(
+    edges_width: typing.Any = Field(
         0.1,
-        description="Width of edges. Original type annotation: <class 'float'>",
-        title="Edges Width",
+        description="""Width of edges.
+        Original annotation is <class 'float'>
+        """,
     )
-    edges_color: Optional[Any] = Field(
+    edges_color: typing.Any = Field(
         "grey",
-        description="Color of edges. Original type annotation: str | collections.abc.Sequence[float] | collections.abc.Sequence[str]",
-        title="Edges Color",
+        description="""Color of edges.
+        Original annotation is str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+        """,
     )
-    neighbors_key: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Where to look for neighbors connectivities. Original type annotation: str | None",
-        title="Neighbors Key",
+        description="""Where to look for neighbors connectivities.
+        Original annotation is str | None
+        """,
     )
-    arrows: Optional[Any] = Field(
+    arrows: typing.Any = Field(
         False,
-        description="Show arrows (deprecated in favour of `scvelo.pl.velocity_embedding`). Original type annotation: <class 'bool'>",
-        title="Arrows",
+        description="""Show arrows (deprecated in favour of `scvelo.pl.velocity_embedding`).
+        Original annotation is <class 'bool'>
+        """,
     )
-    arrows_kwds: Any = Field(
+    arrows_kwds: typing.Any = Field(
         None,
-        description="Passed to :meth:`~matplotlib.axes.Axes.quiver`. Original type annotation: collections.abc.Mapping[str, typing.Any] | None",
-        title="Arrows Kwds",
+        description="""Passed to :meth:`~matplotlib.axes.Axes.quiver`
+        Original annotation is collections.abc.Mapping[str, typing.Any] | None
+        """,
     )
-    groups: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="Restrict to a few categories in categorical observation annotation. Original type annotation: str | collections.abc.Sequence[str] | None",
-        title="Groups",
+        description="""Restrict to a few categories in categorical observation annotation.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    components: Any = Field(
+    components: typing.Any = Field(
         None,
-        description="For plotting specific components. Original type annotation: str | collections.abc.Sequence[str] | None",
-        title="Components",
+        description="""For instance, `[\'1,2\', \'2,3\']`. To plot all available components use `components=\'all\'.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    dimensions: Any = Field(
+    dimensions: typing.Any = Field(
         None,
-        description="0-indexed dimensions of the embedding to plot as integers. Original type annotation: tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None",
-        title="Dimensions",
+        description="""0-indexed dimensions of the embedding to plot as integers.
+        Original annotation is tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None
+        """,
     )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Name of the AnnData object layer that wants to be plotted. Original type annotation: str | None",
-        title="Layer",
+        description="""Name of the AnnData object layer that wants to be plotted.
+        Original annotation is str | None
+        """,
     )
-    projection: Optional[Any] = Field(
+    projection: typing.Any = Field(
         "2d",
-        description="Projection of plot. Original type annotation: typing.Literal['2d', '3d']",
-        title="Projection",
+        description="""Projection of plot (default: `\'2d\'`).
+        Original annotation is typing.Literal['2d', '3d']
+        """,
     )
-    scale_factor: Any = Field(
+    scale_factor: float | None = Field(
         None,
-        description="No description available. Original type annotation: float | None",
-        title="Scale Factor",
+        description="""No description available.
+        Original annotation is float | None
+        """,
     )
-    color_map: Any = Field(
+    color_map: typing.Any = Field(
         None,
-        description="Color map to use for continous variables. Original type annotation: matplotlib.colors.Colormap | str | None",
-        title="Color Map",
+        description="""Color map to use for continuous variables.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
     )
-    cmap: Any = Field(
+    cmap: typing.Any = Field(
         None,
-        description="No description available. Original type annotation: matplotlib.colors.Colormap | str | None",
-        title="Cmap",
+        description="""No description available.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
     )
-    palette: Any = Field(
+    palette: typing.Any = Field(
         None,
-        description="Colors to use for plotting categorical annotation groups. Original type annotation: str | collections.abc.Sequence[str] | cycler.Cycler | None",
-        title="Palette",
+        description="""Colors to use for plotting categorical annotation groups.
+        Original annotation is str | collections.abc.Sequence[str] | cycler.Cycler | None
+        """,
     )
-    na_color: Optional[Any] = Field(
+    na_color: str | tuple[float, ...] = Field(
         "lightgray",
-        description="Color to use for null or masked values. Original type annotation: str | tuple[float, ...]",
-        title="Na Color",
+        description="""Color to use for null or masked values.
+        Original annotation is str | tuple[float, ...]
+        """,
     )
-    na_in_legend: Optional[Any] = Field(
+    na_in_legend: typing.Any = Field(
         True,
-        description="Whether missing values get an entry in the legend. Original type annotation: <class 'bool'>",
-        title="Na In Legend",
+        description="""If there are missing values, whether they get an entry in the legend.
+        Original annotation is <class 'bool'>
+        """,
     )
-    size: Any = Field(
+    size: typing.Any = Field(
         None,
-        description="Point size. Original type annotation: float | collections.abc.Sequence[float] | None",
-        title="Size",
+        description="""Point size.
+        Original annotation is float | collections.abc.Sequence[float] | None
+        """,
     )
-    frameon: Any = Field(
+    frameon: bool | None = Field(
         None,
-        description="Draw a frame around the scatter plot. Original type annotation: bool | None",
-        title="Frameon",
+        description="""Draw a frame around the scatter plot.
+        Original annotation is bool | None
+        """,
     )
-    legend_fontsize: Any = Field(
+    legend_fontsize: typing.Any = Field(
         None,
-        description="Numeric size in pt or string. Original type annotation: typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]",
-        title="Legend Fontsize",
+        description="""Numeric size in pt or string describing the size.
+        Original annotation is typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]
+        """,
     )
-    legend_fontweight: Optional[Any] = Field(
+    legend_fontweight: typing.Any = Field(
         "bold",
-        description="Legend font weight. Original type annotation: typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]",
-        title="Legend Fontweight",
+        description="""Legend font weight.
+        Original annotation is typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]
+        """,
     )
-    legend_loc: Optional[Any] = Field(
+    legend_loc: typing.Any = Field(
         "right margin",
-        description="Location of legend. Original type annotation: typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]",
-        title="Legend Loc",
+        description="""Location of legend.
+        Original annotation is typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]
+        """,
     )
-    legend_fontoutline: Any = Field(
+    legend_fontoutline: int | None = Field(
         None,
-        description="Line width of the legend font outline in pt. Original type annotation: int | None",
-        title="Legend Fontoutline",
+        description="""Line width of the legend font outline in pt.
+        Original annotation is int | None
+        """,
     )
-    colorbar_loc: Optional[Any] = Field(
+    colorbar_loc: str | None = Field(
         "right",
-        description="Location of the colorbar. Original type annotation: str | None",
-        title="Colorbar Loc",
+        description="""Where to place the colorbar for continuous variables.
+        Original annotation is str | None
+        """,
     )
-    vmax: Any = Field(
+    vmax: typing.Any = Field(
         None,
-        description="The value representing the upper limit of the color scale. Original type annotation: str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None",
-        title="Vmax",
+        description="""The value representing the upper limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    vmin: Any = Field(
+    vmin: typing.Any = Field(
         None,
-        description="The value representing the lower limit of the color scale. Original type annotation: str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None",
-        title="Vmin",
+        description="""The value representing the lower limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    vcenter: Any = Field(
+    vcenter: typing.Any = Field(
         None,
-        description="The value representing the center of the color scale. Original type annotation: str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None",
-        title="Vcenter",
+        description="""The value representing the center of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    norm: Any = Field(
+    norm: typing.Any = Field(
         None,
-        description="No description available. Original type annotation: matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None",
-        title="Norm",
+        description="""No description available.
+        Original annotation is matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None
+        """,
     )
-    add_outline: Optional[Any] = Field(
+    add_outline: bool | None = Field(
         False,
-        description="Add a thin border around groups of dots. Original type annotation: bool | None",
-        title="Add Outline",
+        description="""If set to True, this will add a thin border around groups of dots.
+        Original annotation is bool | None
+        """,
     )
-    outline_width: Optional[Any] = Field(
-        [0.3, 0.05],
-        description="Adjust the outline width. Original type annotation: tuple[float, float]",
-        title="Outline Width",
-    )
-    outline_color: Optional[Any] = Field(
-        ["black", "white"],
-        description="Adjust the outline color. Original type annotation: tuple[str, str]",
-        title="Outline Color",
-    )
-    ncols: Optional[Any] = Field(
+    # outline_width: tuple[float, float] = Field(
+    #     (0.3, 0.05),
+    #     description="""Width numbers used to adjust the outline.
+    #     Original annotation is tuple[float, float]
+    #     """,
+    # )
+    # outline_color: tuple[str, str] = Field(
+    #     ("black", "white"),
+    #     description="""Valid color names used to adjust the add_outline.
+    #     Original annotation is tuple[str, str]
+    #     """,
+    # )
+    ncols: typing.Any = Field(
         4,
-        description="Number of panels per row. Original type annotation: <class 'int'>",
-        title="Ncols",
+        description="""Number of panels per row.
+        Original annotation is <class 'int'>
+        """,
     )
-    hspace: Optional[Any] = Field(
+    hspace: typing.Any = Field(
         0.25,
-        description="Adjust the height of the space between multiple panels. Original type annotation: <class 'float'>",
-        title="Hspace",
+        description="""Adjust the height of the space between multiple panels.
+        Original annotation is <class 'float'>
+        """,
     )
-    wspace: Any = Field(
+    wspace: float | None = Field(
         None,
-        description="Adjust the width of the space between multiple panels. Original type annotation: float | None",
-        title="Wspace",
+        description="""Adjust the width of the space between multiple panels.
+        Original annotation is float | None
+        """,
     )
-    title: Any = Field(
+    title: typing.Any = Field(
         None,
-        description="Provide title for panels. Original type annotation: str | collections.abc.Sequence[str] | None",
-        title="Title",
+        description="""Provide title for panels.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="Save the figure. Original type annotation: bool | str | None",
-        title="Save",
+        description="""A matplotlib axes object.
+        Original annotation is matplotlib.axes._axes.Axes | None
+        """,
     )
-    ax: Any = Field(
+    return_fig: bool | None = Field(
         None,
-        description="A matplotlib axes object. Original type annotation: matplotlib.axes._axes.Axes | None",
-        title="Ax",
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
     )
-    return_fig: Any = Field(
-        None,
-        description="Return the matplotlib figure. Original type annotation: bool | None",
-        title="Return Fig",
-    )
-    marker: Optional[Any] = Field(
+    marker: typing.Any = Field(
         ".",
-        description="No description available. Original type annotation: str | collections.abc.Sequence[str]",
-        title="Marker",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[str]
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.tsne")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -702,106 +1010,146 @@ class ScPlTsne(BaseAPI):
 
 class ScPlHeatmap(BaseAPI):
     """
-    Heatmap of the expression values of genes. If `groupby` is given, the heatmap is ordered by the respective group. For example, a list of marker genes can be plotted, ordered by clustering. If the `groupby` observation annotation is not categorical the observation annotation is turned into a categorical by binning the data into the number specified in `num_categories`.
+    Heatmap of the expression values of genes with various customizable parameters such as ordering by groups, logarithmic axis, and dendrogram addition based on the hierarchical clustering.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    var_names: Any = Field(
-        ...,
-        description="`var_names` should be a valid subset of `adata.var_names` and can include grouping information.",
-        title="Var Names",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix required for plotting the heatmap.
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="The key of the observation grouping to consider.",
-        title="Groupby",
+    var_names: typing.Any = Field(
+        Ellipsis,
+        description="""Subset of `adata.var_names` used for grouping values, with options for coloring or \'brackets\' based on the plot.
+        Original annotation is _VarNames | Mapping[str, _VarNames]
+        """,
     )
-    use_raw: Any = Field(
+    groupby: str | Sequence[str] = Field(
+        Ellipsis,
+        description="""Key of the observation grouping to consider for the heatmap.
+        Original annotation is str | Sequence[str]
+        """,
+    )
+    use_raw: bool | None = Field(
         None,
-        description="Flag to indicate whether to use the `raw` attribute of `adata` if present.",
-        title="Use Raw",
+        description="""Decision to use the `raw` attribute of `adata` if available.
+        Original annotation is bool | None
+        """,
     )
-    log: Optional[Any] = Field(
-        False, description="Option to plot on a logarithmic axis.", title="Log"
-    )
-    num_categories: Optional[Any] = Field(
-        7,
-        description="Number of groups into which the groupby observation should be subdivided if not categorical.",
-        title="Num Categories",
-    )
-    dendrogram: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Option to include a dendrogram based on hierarchical clustering between groupby categories.",
-        title="Dendrogram",
+        description="""Option to plot the heatmap on a logarithmic axis.
+        Original annotation is bool
+        """,
     )
-    gene_symbols: Any = Field(
+    num_categories: int = Field(
+        7,
+        description="""Determines the number of groups to subdivide the groupby observation into if it\'s not categorical.
+        Original annotation is int
+        """,
+    )
+    dendrogram: bool | str = Field(
+        False,
+        description="""Adds a dendrogram based on hierarchical clustering between groupby categories if True or a valid dendrogram key.
+        Original annotation is bool | str
+        """,
+    )
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols.",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols, providing an alternative to default var_names.
+        Original annotation is str | None
+        """,
     )
-    var_group_positions: Any = Field(
+    # var_group_positions: Sequence[tuple[int, int]] | None = Field(
+    #     None,
+    #     description="""Highlights groups of var_names with \'brackets\' or color blocks based on specified start and end positions.
+    #     Original annotation is Sequence[tuple[int, int]] | None
+    #     """,
+    # )
+    var_group_labels: typing.Any = Field(
         None,
-        description="Parameter to highlight groups of `var_names` using brackets or color blocks.",
-        title="Var Group Positions",
+        description="""Labels for each var_group_positions to be highlighted.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    var_group_labels: Any = Field(
+    var_group_rotation: float | None = Field(
         None,
-        description="Labels for each of the `var_group_positions` that want to be highlighted.",
-        title="Var Group Labels",
+        description="""Rotation degrees for labels, default is 90 degrees for labels larger than 4 characters.
+        Original annotation is float | None
+        """,
     )
-    var_group_rotation: Any = Field(
-        None, description="Rotation degrees for labels.", title="Var Group Rotation"
-    )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Name of the AnnData object layer to be plotted.",
-        title="Layer",
+        description="""Specifies the AnnData object layer to be plotted, with priority over `use_raw` if set to a valid layer name.
+        Original annotation is str | None
+        """,
     )
-    standard_scale: Any = Field(
+    standard_scale: Literal["var", "obs"] | None = Field(
         None,
-        description="Option to standardize dimensions between 0 and 1.",
-        title="Standard Scale",
+        description="""Determines whether to standardize dimension between 0 and 1 by subtracting the minimum and dividing by the maximum.
+        Original annotation is Literal['var', 'obs'] | None
+        """,
     )
-    swap_axes: Optional[Any] = Field(
-        False, description="Option to swap x and y axes in the plot.", title="Swap Axes"
+    swap_axes: bool = Field(
+        False,
+        description="""Switches the x and y axes in the heatmap, swapping `var_names` with `groupby` categories.
+        Original annotation is bool
+        """,
     )
-    show_gene_labels: Any = Field(
+    show_gene_labels: bool | None = Field(
         None,
-        description="Toggle to show or remove gene labels based on the number of genes.",
-        title="Show Gene Labels",
+        description="""Controls the display of gene labels based on the number of genes in the plot.
+        Original annotation is bool | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Option to show the plot without returning axis.",
-        title="Show",
+        description="""Displays the plot without returning the axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""Saves the figure if True or a string, with filetype inferred from the appended extension.
+        Original annotation is str | bool | None
+        """,
+    )
+    # figsize: tuple[float, float] | None = Field(
+    #     None,
+    #     description="""Figure size when `multi_panel=True`, otherwise uses default `rcParam[\'figure.figsize]` value.
+    #     Original annotation is tuple[float, float] | None
+    #     """,
+    # )
+    vmin: float | None = Field(
         None,
-        description="Option to save the figure with a specified filename and filetype.",
-        title="Save",
+        description="""Lower limit of the color scale, values smaller than vmin are plotted with the same color as vmin.
+        Original annotation is float | None
+        """,
     )
-    figsize: Any = Field(
+    vmax: float | None = Field(
         None,
-        description="Figure size parameter when `multi_panel=True`.",
-        title="Figsize",
+        description="""Upper limit of the color scale, values larger than vmax are plotted with the same color as vmax.
+        Original annotation is float | None
+        """,
     )
-    vmin: Any = Field(
-        None, description="The lower limit of the color scale.", title="Vmin"
-    )
-    vmax: Any = Field(
-        None, description="The upper limit of the color scale.", title="Vmax"
-    )
-    vcenter: Any = Field(
+    vcenter: float | None = Field(
         None,
-        description="The center of the color scale, useful for diverging colormaps.",
-        title="Vcenter",
+        description="""Center of the color scale, useful for diverging colormaps.
+        Original annotation is float | None
+        """,
     )
-    norm: Any = Field(
+    norm: typing.Any = Field(
         None,
-        description="Custom color normalization object from matplotlib.",
-        title="Norm",
+        description="""Custom color normalization object from matplotlib for the heatmap.
+        Original annotation is Normalize | None
+        """,
     )
-    kwds: Any = Field(..., description="Additional keyword arguments.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Additional parameters passed to `matplotlib.pyplot.imshow`.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.heatmap")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -809,181 +1157,217 @@ class ScPlHeatmap(BaseAPI):
 
 class ScPlDotplot(BaseAPI):
     """
-    Make a dot plot of the expression values of var_names. For each var_name and each groupby category a dot is plotted. Each dot represents two values: mean expression within each category (visualized by color) and fraction of cells expressing the var_name in the category (visualized by the size of the dot). If groupby is not given, the dotplot assumes that all data belongs to a single category. A gene is considered expressed if the expression value in the adata (or adata.raw) is above the specified threshold which is zero by default. An example of dotplot usage is to visualize, for multiple marker genes, the mean value and the percentage of cells expressing the gene across multiple clusters. This function provides a convenient interface to the scanpy.pl.DotPlot class. If you need more flexibility, you should use scanpy.pl.DotPlot directly.
+    Make a dot plot of the expression values of var_names. Each dot represents mean expression within each category and fraction of cells expressing the var_name.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    var_names: Any = Field(
-        ...,
-        description="`var_names` should be a valid subset of `adata.var_names`. If `var_names` is a mapping, then the key is used to group values. Original type annotation: _VarNames | Mapping[str, _VarNames]",
-        title="Var Names",
+    var_names: typing.Any = Field(
+        Ellipsis,
+        description="""Subset of adata.var_names, used to group values. Can be a mapping with keys as labels and values as sequences of var_names.
+        Original annotation is _VarNames | Mapping[str, _VarNames]
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="The key of the observation grouping to consider. Original type annotation: str | Sequence[str]",
-        title="Groupby",
+    groupby: str | Sequence[str] = Field(
+        Ellipsis,
+        description="""Key of the observation grouping to consider.
+        Original annotation is str | Sequence[str]
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Use `raw` attribute of `adata` if present. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Use raw attribute of adata if present.
+        Original annotation is bool | None
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Plot on a logarithmic axis. Original type annotation: bool",
-        title="Log",
+        description="""Plot on a logarithmic axis.
+        Original annotation is bool
+        """,
     )
-    num_categories: Optional[Any] = Field(
+    num_categories: int = Field(
         7,
-        description="Determines the number of groups when groupby observation is not categorical. Original type annotation: int",
-        title="Num Categories",
+        description="""Determines the number of groups if groupby observation is not categorical.
+        Original annotation is int
+        """,
     )
-    categories_order: Any = Field(
+    categories_order: typing.Any = Field(
         None,
-        description="Order in which to show the categories. Original type annotation: Sequence[str] | None",
-        title="Categories Order",
+        description="""Order in which to show the categories.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    expression_cutoff: Optional[Any] = Field(
+    expression_cutoff: float = Field(
         0.0,
-        description="Threshold for gene expression to determine cell expression. Original type annotation: float",
-        title="Expression Cutoff",
+        description="""Threshold used for binarizing gene expression.
+        Original annotation is float
+        """,
     )
-    mean_only_expressed: Optional[Any] = Field(
+    mean_only_expressed: bool = Field(
         False,
-        description="If True, average gene expression only over expressing cells. Original type annotation: bool",
-        title="Mean Only Expressed",
+        description="""If True, average gene expression over cells expressing the gene.
+        Original annotation is bool
+        """,
     )
-    standard_scale: Any = Field(
+    standard_scale: typing.Any = Field(
         None,
-        description="Standardize dimension between 0 and 1. Original type annotation: Literal['var', 'group'] | None",
-        title="Standard Scale",
+        description="""Standardize dimension between 0 and 1.
+        Original annotation is Literal['var', 'group'] | None
+        """,
     )
-    title: Any = Field(
+    title: str | None = Field(
         None,
-        description="Title for the figure. Original type annotation: str | None",
-        title="Title",
+        description="""Title for the figure.
+        Original annotation is str | None
+        """,
     )
-    colorbar_title: Optional[Any] = Field(
-        "Mean expression\nin group",
-        description="Title for the color bar. Original type annotation: str | None",
-        title="Colorbar Title",
+    colorbar_title: str | None = Field(
+        "Mean expression in group",
+        description="""Title for the color bar.
+        Original annotation is str | None
+        """,
     )
-    size_title: Optional[Any] = Field(
-        "Fraction of cells\nin group (%)",
-        description="Title for the size legend. Original type annotation: str | None",
-        title="Size Title",
+    size_title: str | None = Field(
+        "Fraction of cells in group (%)",
+        description="""Title for the size legend.
+        Original annotation is str | None
+        """,
     )
-    figsize: Any = Field(
-        None,
-        description="Figure size when `multi_panel=True`. Original type annotation: tuple[float, float] | None",
-        title="Figsize",
-    )
-    dendrogram: Optional[Any] = Field(
+    # figsize: tuple[float, float] | None = Field(
+    #     None,
+    #     description="""Figure size, format: (width, height).
+    #     Original annotation is tuple[float, float] | None
+    #     """,
+    # )
+    dendrogram: bool | str = Field(
         False,
-        description="Add dendrogram based on hierarchical clustering between groupby categories. Original type annotation: bool | str",
-        title="Dendrogram",
+        description="""Add dendrogram based on hierarchical clustering between groupby categories.
+        Original annotation is bool | str
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in .var DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    var_group_positions: Any = Field(
+    # var_group_positions: Sequence[tuple[int, int]] | None = Field(
+    #     None,
+    #     description="""Highlight groups of var_names with brackets or color blocks.
+    #     Original annotation is Sequence[tuple[int, int]] | None
+    #     """,
+    # )
+    var_group_labels: typing.Any = Field(
         None,
-        description="Highlight groups of `var_names` with brackets or color blocks. Original type annotation: Sequence[tuple[int, int]] | None",
-        title="Var Group Positions",
+        description="""Labels for var_group_positions.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    var_group_labels: Any = Field(
+    var_group_rotation: float | None = Field(
         None,
-        description="Labels for highlighted `var_group_positions`. Original type annotation: Sequence[str] | None",
-        title="Var Group Labels",
+        description="""Label rotation degrees.
+        Original annotation is float | None
+        """,
     )
-    var_group_rotation: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Label rotation degrees. Original type annotation: float | None",
-        title="Var Group Rotation",
+        description="""Name of the AnnData object layer to plot.
+        Original annotation is str | None
+        """,
     )
-    layer: Any = Field(
-        None,
-        description="Name of the AnnData object layer to be plotted. Original type annotation: str | None",
-        title="Layer",
-    )
-    swap_axes: Optional[Any] = Field(
+    swap_axes: bool | None = Field(
         False,
-        description="Swap x and y axes. Original type annotation: bool | None",
-        title="Swap Axes",
+        description="""Swap x and y axes.
+        Original annotation is bool | None
+        """,
     )
-    dot_color_df: Any = Field(
+    dot_color_df: typing.Any = Field(
         None,
-        description="Dataframe for dot colors. Original type annotation: pd.DataFrame | None",
-        title="Dot Color Df",
+        description="""No description available.
+        Original annotation is pd.DataFrame | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot without returning axes.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""Save the figure if True or string.
+        Original annotation is str | bool | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="Save the figure with option for filetype. Original type annotation: str | bool | None",
-        title="Save",
+        description="""Matplotlib axes object for plotting a single component.
+        Original annotation is _AxesSubplot | None
+        """,
     )
-    ax: Any = Field(
-        None,
-        description="Matplotlib axes object. Original type annotation: _AxesSubplot | None",
-        title="Ax",
-    )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool | None = Field(
         False,
-        description="Return DotPlot object. Original type annotation: bool | None",
-        title="Return Fig",
+        description="""Returns DotPlot object for fine-tuning the plot.
+        Original annotation is bool | None
+        """,
     )
-    vmin: Any = Field(
+    vmin: float | None = Field(
         None,
-        description="Lower limit of color scale. Original type annotation: float | None",
-        title="Vmin",
+        description="""Lower limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    vmax: Any = Field(
+    vmax: float | None = Field(
         None,
-        description="Upper limit of color scale. Original type annotation: float | None",
-        title="Vmax",
+        description="""Upper limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    vcenter: Any = Field(
+    vcenter: float | None = Field(
         None,
-        description="Center of color scale. Original type annotation: float | None",
-        title="Vcenter",
+        description="""Center of the color scale.
+        Original annotation is float | None
+        """,
     )
-    norm: Any = Field(
+    norm: typing.Any = Field(
         None,
-        description="Custom color normalization object from matplotlib. Original type annotation: Normalize | None",
-        title="Norm",
+        description="""Custom color normalization object from matplotlib.
+        Original annotation is Normalize | None
+        """,
     )
-    cmap: Optional[Any] = Field(
+    cmap: typing.Any = Field(
         "Reds",
-        description="Matplotlib color map. Original type annotation: Colormap | str | None",
-        title="Cmap",
+        description="""Matplotlib color map.
+        Original annotation is Colormap | str | None
+        """,
     )
-    dot_max: Any = Field(
+    dot_max: float | None = Field(
         None,
-        description="Maximum dot size based on fraction value. Original type annotation: float | None",
-        title="Dot Max",
+        description="""Maximum dot size for fraction value.
+        Original annotation is float | None
+        """,
     )
-    dot_min: Any = Field(
+    dot_min: float | None = Field(
         None,
-        description="Minimum dot size. Original type annotation: float | None",
-        title="Dot Min",
+        description="""Minimum dot size for fraction value.
+        Original annotation is float | None
+        """,
     )
-    smallest_dot: Optional[Any] = Field(
+    smallest_dot: float = Field(
         0.0,
-        description="Size for expression levels at `dot_min`. Original type annotation: float",
-        title="Smallest Dot",
+        description="""Size for expression levels with dot_min.
+        Original annotation is float
+        """,
     )
-    kwds: Any = Field(
-        ..., description="Parameters passed to matplotlib.pyplot.scatter", title="Kwds"
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Passed to matplotlib.pyplot.scatter.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.dotplot")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -992,105 +1376,128 @@ class ScPlDotplot(BaseAPI):
 
 class ScPlViolin(BaseAPI):
     """
-    Violin plot. Wraps seaborn.violinplot for anndata.AnnData.
+    Violin plot. Wraps seaborn.violinplot for AnnData. Parameters include adata, keys, groupby, log, use_raw, stripplot, jitter, size, layer, density_norm, order, multi_panel, xlabel, ylabel, rotation, show, save, ax, and kwds.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    keys: Any = Field(
-        ...,
-        description="Keys for accessing variables of `.var_names` or fields of `.obs`. Original type annotation: str | Sequence[str]",
-        title="Keys",
+    keys: str | Sequence[str] = Field(
+        Ellipsis,
+        description="""Keys for accessing variables of .var_names or fields of .obs.
+        Original annotation is str | Sequence[str]
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider. Original type annotation: str | None",
-        title="Groupby",
+        description="""The key of the observation grouping to consider.
+        Original annotation is str | None
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Plot on logarithmic axis. Original type annotation: bool",
-        title="Log",
+        description="""Plot on logarithmic axis.
+        Original annotation is bool
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Whether to use `raw` attribute of `adata`. Defaults to `True` if `.raw` is present. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Whether to use raw attribute of adata. Defaults to True if .raw is present.
+        Original annotation is bool | None
+        """,
     )
-    stripplot: Optional[Any] = Field(
+    stripplot: bool = Field(
         True,
-        description="Add a stripplot on top of the violin plot. See :func:`~seaborn.stripplot`. Original type annotation: bool",
-        title="Stripplot",
+        description="""Add a stripplot on top of the violin plot.
+        Original annotation is bool
+        """,
     )
-    jitter: Optional[Any] = Field(
+    jitter: float | bool = Field(
         True,
-        description="Add jitter to the stripplot (only when stripplot is True). See :func:`~seaborn.stripplot`. Original type annotation: float | bool",
-        title="Jitter",
+        description="""Add jitter to the stripplot (only when stripplot is True).
+        Original annotation is float | bool
+        """,
     )
-    size: Optional[Any] = Field(
+    size: int = Field(
         1,
-        description="Size of the jitter points. Original type annotation: int",
-        title="Size",
+        description="""Size of the jitter points.
+        Original annotation is int
+        """,
     )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Name of the AnnData object layer that wants to be plotted. By default adata.raw.X is plotted. If `use_raw=False` is set, then `adata.X` is plotted. If `layer` is set to a valid layer name, then the layer is plotted. `layer` takes precedence over `use_raw`. Original type annotation: str | None",
-        title="Layer",
+        description="""Name of the AnnData object layer that wants to be plotted. By default adata.raw.X is plotted. If use_raw=False, then adata.X is plotted. If layer is set to a valid layer name, then the layer is plotted. layer takes precedence over use_raw.
+        Original annotation is str | None
+        """,
     )
-    density_norm: Optional[Any] = Field(
+    density_norm: typing.Any = Field(
         "width",
-        description="The method used to scale the width of each violin. If 'width' (the default), each violin will have the same width. If 'area', each violin will have the same area. If 'count', a violin’s width corresponds to the number of observations. Original type annotation: DensityNorm",
-        title="Density Norm",
+        description="""Method used to scale the width of each violin. Options include width, area, and count.
+        Original annotation is DensityNorm
+        """,
     )
-    order: Any = Field(
+    order: typing.Any = Field(
         None,
-        description="Order in which to show the categories. Original type annotation: Sequence[str] | None",
-        title="Order",
+        description="""Order in which to show the categories.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    multi_panel: Any = Field(
+    multi_panel: bool | None = Field(
         None,
-        description="Display keys in multiple panels also when `groupby is not None`. Original type annotation: bool | None",
-        title="Multi Panel",
+        description="""Display keys in multiple panels also when groupby is not None.
+        Original annotation is bool | None
+        """,
     )
-    xlabel: Optional[Any] = Field(
+    xlabel: str = Field(
         "",
-        description="Label of the x axis. Defaults to `groupby` if `rotation` is `None`, otherwise, no label is shown. Original type annotation: str",
-        title="Xlabel",
+        description="""Label of the x axis. Defaults to groupby if rotation is None, otherwise, no label is shown.
+        Original annotation is str
+        """,
     )
-    ylabel: Any = Field(
+    ylabel: str | Sequence[str] | None = Field(
         None,
-        description="Label of the y axis. If `None` and `groupby` is `None`, defaults to `'value'`. If `None` and `groubpy` is not `None`, defaults to `keys`. Original type annotation: str | Sequence[str] | None",
-        title="Ylabel",
+        description="""Label of the y axis. Defaults to \'value\' if groupby is None, otherwise defaults to keys.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    rotation: Any = Field(
+    rotation: float | None = Field(
         None,
-        description="Rotation of xtick labels. Original type annotation: float | None",
-        title="Rotation",
+        description="""Rotation of xtick labels.
+        Original annotation is float | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If True or a str, save the figure. A string is appended to the default filename. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: bool | str | None",
-        title="Save",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
-    ax: Any = Field(
-        None,
-        description="A matplotlib axes object. Only works if plotting a single component. Original type annotation: Axes | None",
-        title="Ax",
+    scale: typing.Any = Field(
+        "Empty.token",
+        description="""No description available.
+        Original annotation is DensityNorm | Empty
+        """,
     )
-    scale: Optional[Any] = Field(
-        0,
-        description="No description available. Original type annotation: DensityNorm | Empty",
-        title="Scale",
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
     _api_name: str = PrivateAttr(default="sc.pl.violin")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -1101,45 +1508,53 @@ class ScPlDendrogram(BaseAPI):
     Plot a dendrogram of the categories defined in `groupby`. See :func:`~scanpy.tl.dendrogram`.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="Categorical data column used to create the dendrogram. Original type annotation: str",
-        title="Groupby",
+    groupby: str = Field(
+        Ellipsis,
+        description="""Categorical data column used to create the dendrogram.
+        Original annotation is str
+        """,
     )
-    dendrogram_key: Any = Field(
+    dendrogram_key: str | None = Field(
         None,
-        description="Key under which the dendrogram information was stored. By default, the dendrogram information is stored under `.uns[f'dendrogram_{groupby}']`. Original type annotation: str | None",
-        title="Dendrogram Key",
+        description="""Key under with the dendrogram information was stored. By default stored under `.uns[f\'dendrogram_{groupby}\']`.
+        Original annotation is str | None
+        """,
     )
-    orientation: Optional[Any] = Field(
+    orientation: typing.Any = Field(
         "top",
-        description="Origin of the tree. Will grow into the opposite direction. Original type annotation: Literal['top', 'bottom', 'left', 'right']",
-        title="Orientation",
+        description="""Origin of the tree. Will grow into the opposite direction.
+        Original annotation is Literal['top', 'bottom', 'left', 'right']
+        """,
     )
-    remove_labels: Optional[Any] = Field(
+    remove_labels: bool = Field(
         False,
-        description="Don’t draw labels. Used by functions like scanpy.pl.matrixplot to annotate matrix columns/rows. Original type annotation: bool",
-        title="Remove Labels",
+        description="""Don’t draw labels. Used e.g. by :func:`scanpy.pl.matrixplot` to annotate matrix columns/rows.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If True or a string, save the figure. A string is appended to the default filename. Infer the filetype if ending on {'.pdf', '.png', '.svg'}. Original type annotation: str | bool | None",
-        title="Save",
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is str | bool | None
+        """,
     )
-    ax: Any = Field(
+    ax: typing.Any = Field(
         None,
-        description="A matplotlib axes object. Only works if plotting a single component. Original type annotation: Axes | None",
-        title="Ax",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.dendrogram")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1151,177 +1566,287 @@ class ScPlDiffmap(BaseAPI):
     Scatter plot in Diffusion Map basis.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    color: Any = Field(
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
+    )
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes.",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes, e.g., `\'ann1\'` or `[\'ann1\', \'ann2\']`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    mask_obs: Any = Field(
-        None, description="No description available.", title="Mask Obs"
-    )
-    gene_symbols: Any = Field(
+    mask_obs: typing.Any = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols.",
-        title="Gene Symbols",
+        description="""No description available.
+        Original annotation is numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None
+        """,
     )
-    use_raw: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Use `.raw` attribute of `adata` for coloring with gene expression.",
-        title="Use Raw",
+        description="""Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Setting this option allows alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    use_raw: bool | None = Field(
+        None,
+        description="""Use `.raw` attribute of `adata` for coloring with gene expression. If `None`, defaults to `True` if `layer` isn\'t provided and `adata.raw` is present.
+        Original annotation is bool | None
+        """,
+    )
+    sort_order: typing.Any = Field(
         True,
-        description="For continuous annotations used as color parameter, plot data points with higher values on top of others.",
-        title="Sort Order",
+        description="""For continuous annotations used as color parameter, plot data points with higher values on top of others.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges: Optional[Any] = Field(
-        False, description="No description available.", title="Edges"
-    )
-    edges_width: Optional[Any] = Field(
-        0.1, description="No description available.", title="Edges Width"
-    )
-    edges_color: Optional[Any] = Field(
-        "grey", description="No description available.", title="Edges Color"
-    )
-    neighbors_key: Any = Field(
-        None, description="No description available.", title="Neighbors Key"
-    )
-    arrows: Optional[Any] = Field(
-        False, description="No description available.", title="Arrows"
-    )
-    arrows_kwds: Any = Field(
-        None, description="No description available.", title="Arrows Kwds"
-    )
-    groups: Any = Field(
-        None,
-        description="Restrict to a few categories in categorical observation annotation.",
-        title="Groups",
-    )
-    components: Any = Field(
-        None,
-        description="For plotting available components or a subset specified by the user.",
-        title="Components",
-    )
-    dimensions: Any = Field(
-        None,
-        description="0-indexed dimensions of the embedding to plot as integers.",
-        title="Dimensions",
-    )
-    layer: Any = Field(
-        None,
-        description="Name of the AnnData object layer that wants to be plotted.",
-        title="Layer",
-    )
-    projection: Optional[Any] = Field(
-        "2d", description="Projection of plot.", title="Projection"
-    )
-    scale_factor: Any = Field(
-        None, description="No description available.", title="Scale Factor"
-    )
-    color_map: Any = Field(
-        None,
-        description="Color map to use for continuous variables.",
-        title="Color Map",
-    )
-    cmap: Any = Field(None, description="No description available.", title="Cmap")
-    palette: Any = Field(
-        None,
-        description="Colors to use for plotting categorical annotation groups.",
-        title="Palette",
-    )
-    na_color: Optional[Any] = Field(
-        "lightgray",
-        description="Color to use for null or masked values.",
-        title="Na Color",
-    )
-    na_in_legend: Optional[Any] = Field(
-        True,
-        description="Whether missing values get an entry in the legend.",
-        title="Na In Legend",
-    )
-    size: Any = Field(None, description="Point size for each cell.", title="Size")
-    frameon: Any = Field(
-        None, description="Draw a frame around the scatter plot.", title="Frameon"
-    )
-    legend_fontsize: Any = Field(
-        None,
-        description="Numeric size in pt or string describing the size.",
-        title="Legend Fontsize",
-    )
-    legend_fontweight: Optional[Any] = Field(
-        "bold", description="Legend font weight.", title="Legend Fontweight"
-    )
-    legend_loc: Optional[Any] = Field(
-        "right margin", description="Location of legend.", title="Legend Loc"
-    )
-    legend_fontoutline: Any = Field(
-        None,
-        description="Line width of the legend font outline.",
-        title="Legend Fontoutline",
-    )
-    colorbar_loc: Optional[Any] = Field(
-        "right",
-        description="Location to place the colorbar for continuous variables.",
-        title="Colorbar Loc",
-    )
-    vmax: Any = Field(
-        None,
-        description="The value representing the upper limit of the color scale.",
-        title="Vmax",
-    )
-    vmin: Any = Field(
-        None,
-        description="The value representing the lower limit of the color scale.",
-        title="Vmin",
-    )
-    vcenter: Any = Field(
-        None,
-        description="The value representing the center of the color scale.",
-        title="Vcenter",
-    )
-    norm: Any = Field(None, description="No description available.", title="Norm")
-    add_outline: Optional[Any] = Field(
+    edges: typing.Any = Field(
         False,
-        description="If set to True, this will add a thin border around groups of dots.",
-        title="Add Outline",
+        description="""No description available.
+        Original annotation is <class 'bool'>
+        """,
     )
-    outline_width: Optional[Any] = Field(
-        [0.3, 0.05],
-        description="Width numbers used to adjust the outline.",
-        title="Outline Width",
+    edges_width: typing.Any = Field(
+        0.1,
+        description="""No description available.
+        Original annotation is <class 'float'>
+        """,
     )
-    outline_color: Optional[Any] = Field(
-        ["black", "white"],
-        description="Color names used to adjust the add_outline.",
-        title="Outline Color",
+    edges_color: typing.Any = Field(
+        "grey",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+        """,
     )
-    ncols: Optional[Any] = Field(
-        4, description="Number of panels per row.", title="Ncols"
-    )
-    hspace: Optional[Any] = Field(
-        0.25,
-        description="Adjust the height of the space between multiple panels.",
-        title="Hspace",
-    )
-    wspace: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Adjust the width of the space between multiple panels.",
-        title="Wspace",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    title: Any = Field(None, description="Provide title for panels.", title="Title")
-    show: Any = Field(
-        None, description="Show the plot, do not return axis.", title="Show"
+    arrows: typing.Any = Field(
+        False,
+        description="""No description available.
+        Original annotation is <class 'bool'>
+        """,
     )
-    save: Any = Field(
-        None, description="If `True` or a `str`, save the figure.", title="Save"
+    arrows_kwds: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is collections.abc.Mapping[str, typing.Any] | None
+        """,
     )
-    ax: Any = Field(None, description="A matplotlib axes object.", title="Ax")
-    return_fig: Any = Field(
-        None, description="Return the matplotlib figure.", title="Return Fig"
+    groups: typing.Any = Field(
+        None,
+        description="""Restrict to a few categories in categorical observation annotation. The default is not to restrict to any groups.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    marker: Optional[Any] = Field(
-        ".", description="No description available.", title="Marker"
+    components: typing.Any = Field(
+        None,
+        description="""For instance, `[\'1,2\', \'2,3\']`. To plot all available components use `components=\'all\'`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    dimensions: typing.Any = Field(
+        None,
+        description="""0-indexed dimensions of the embedding to plot as integers. E.g. [(0, 1), (1, 2)]. Unlike `components`, this argument is used in the same way as `colors`, e.g. is used to specify a single plot at a time. Will eventually replace the components argument.
+        Original annotation is tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None
+        """,
+    )
+    layer: str | None = Field(
+        None,
+        description="""Name of the AnnData object layer that wants to be plotted. By default adata.raw.X is plotted. If `use_raw=False` is set, then `adata.X` is plotted. If `layer` is set to a valid layer name, then the layer is plotted. `layer` takes precedence over `use_raw`.
+        Original annotation is str | None
+        """,
+    )
+    projection: typing.Any = Field(
+        "2d",
+        description="""Projection of plot (default: `\'2d\'`).
+        Original annotation is typing.Literal['2d', '3d']
+        """,
+    )
+    scale_factor: float | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is float | None
+        """,
+    )
+    color_map: typing.Any = Field(
+        None,
+        description="""Color map to use for continous variables. Can be a name or a :class:`~matplotlib.colors.Colormap` instance (e.g. `\"magma`\", `\"viridis\"` or `mpl.cm.cividis`), see :meth:`~matplotlib.cm.ColormapRegistry.get_cmap`. If `None`, the value of `mpl.rcParams[\"image.cmap\"]` is used. The default `color_map` can be set using :func:`~scanpy.set_figure_params`.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    cmap: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    palette: typing.Any = Field(
+        None,
+        description="""Colors to use for plotting categorical annotation groups. The palette can be a valid :class:`~matplotlib.colors.ListedColormap` name (`\'Set2\'`, `\'tab20\'`, …), a :class:`~cycler.Cycler` object, a dict mapping categories to colors, or a sequence of colors. Colors must be valid to matplotlib. (see :func:`~matplotlib.colors.is_color_like`). If `None`, `mpl.rcParams[\"axes.prop_cycle\"]` is used unless the categorical variable already has colors stored in `adata.uns[\"{var}_colors\"]`. If provided, values of `adata.uns[\"{var}_colors\"]` will be set.
+        Original annotation is str | collections.abc.Sequence[str] | cycler.Cycler | None
+        """,
+    )
+    na_color: str | tuple[float, ...] = Field(
+        "lightgray",
+        description="""Color to use for null or masked values. Can be anything matplotlib accepts as a color. Used for all points if `color=None`.
+        Original annotation is str | tuple[float, ...]
+        """,
+    )
+    na_in_legend: typing.Any = Field(
+        True,
+        description="""If there are missing values, whether they get an entry in the legend. Currently only implemented for categorical legends.
+        Original annotation is <class 'bool'>
+        """,
+    )
+    size: typing.Any = Field(
+        None,
+        description="""Point size. If `None`, is automatically computed as 120000 / n_cells. Can be a sequence containing the size for each cell. The order should be the same as in adata.obs.
+        Original annotation is float | collections.abc.Sequence[float] | None
+        """,
+    )
+    frameon: bool | None = Field(
+        None,
+        description="""Draw a frame around the scatter plot. Defaults to value set in :func:`~scanpy.set_figure_params`, defaults to `True`.
+        Original annotation is bool | None
+        """,
+    )
+    legend_fontsize: typing.Union[
+        float,
+        typing.Literal[
+            "xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"
+        ],
+        None,
+    ] = Field(
+        None,
+        description="""Numeric size in pt or string describing the size. See :meth:`~matplotlib.text.Text.set_fontsize`.
+        Original annotation is typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]
+        """,
+    )
+    legend_fontweight: typing.Any = Field(
+        "bold",
+        description="""Legend font weight. A numeric value in range 0-1000 or a string. Defaults to `\'bold\'` if `legend_loc == \'on data\'`, otherwise to `\'normal\'`. See :meth:`~matplotlib.text.Text.set_fontweight`.
+        Original annotation is typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]
+        """,
+    )
+    legend_loc: typing.Any = Field(
+        "right margin",
+        description="""Location of legend, either `\'on data\'`, `\'right margin\'`, `None`, or a valid keyword for the `loc` parameter of :class:`~matplotlib.legend.Legend`.
+        Original annotation is typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]
+        """,
+    )
+    legend_fontoutline: int | None = Field(
+        None,
+        description="""Line width of the legend font outline in pt. Draws a white outline using the path effect :class:`~matplotlib.patheffects.withStroke`.
+        Original annotation is int | None
+        """,
+    )
+    colorbar_loc: str | None = Field(
+        "right",
+        description="""Where to place the colorbar for continous variables. If `None`, no colorbar is added.
+        Original annotation is str | None
+        """,
+    )
+    vmax: typing.Any = Field(
+        None,
+        description="""The value representing the upper limit of the color scale. The format is the same as for `vmin`.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    vmin: typing.Any = Field(
+        None,
+        description="""The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin. vmin can be a number, a string, a function or `None`. If vmin is a string and has the format `pN`, this is interpreted as a vmin=percentile(N). For example vmin=\'p1.5\' is interpreted as the 1.5 percentile. If vmin is function, then vmin is interpreted as the return value of the function over the list of values to plot. For example to set vmin tp the mean of the values to plot, `def my_vmin(values): return np.mean(values)` and then set `vmin=my_vmin`. If vmin is None (default) an automatic minimum value is used as defined by matplotlib `scatter` function. When making multiple plots, vmin can be a list of values, one for each plot. For example `vmin=[0.1, \'p1\', None, my_vmin]`
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    vcenter: typing.Any = Field(
+        None,
+        description="""The value representing the center of the color scale. Useful for diverging colormaps. The format is the same as for `vmin`. Example: ``sc.pl.umap(adata, color=\'TREM2\', vcenter=\'p50\', cmap=\'RdBu_r\')``
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    norm: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None
+        """,
+    )
+    add_outline: bool | None = Field(
+        False,
+        description="""If set to True, this will add a thin border around groups of dots. In some situations this can enhance the aesthetics of the resulting image
+        Original annotation is bool | None
+        """,
+    )
+    # outline_width: tuple[float, float] = Field(
+    #     (0.3, 0.05),
+    #     description="""Tuple with two width numbers used to adjust the outline. The first value is the width of the border color as a fraction of the scatter dot size (default: 0.3). The second value is width of the gap color (default: 0.05).
+    #     Original annotation is tuple[float, float]
+    #     """,
+    # )
+    # outline_color: tuple[str, str] = Field(
+    #     ("black", "white"),
+    #     description="""Tuple with two valid color names used to adjust the add_outline. The first color is the border color (default: black), while the second color is a gap color between the border color and the scatter dot (default: white).
+    #     Original annotation is tuple[str, str]
+    #     """,
+    # )
+    ncols: typing.Any = Field(
+        4,
+        description="""Number of panels per row.
+        Original annotation is <class 'int'>
+        """,
+    )
+    hspace: typing.Any = Field(
+        0.25,
+        description="""Adjust the height of the space between multiple panels.
+        Original annotation is <class 'float'>
+        """,
+    )
+    wspace: float | None = Field(
+        None,
+        description="""Adjust the width of the space between multiple panels.
+        Original annotation is float | None
+        """,
+    )
+    title: typing.Any = Field(
+        None,
+        description="""Provide title for panels either as string or list of strings, e.g. `[\'title1\', \'title2\', ...]`.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    show: bool | None = Field(
+        None,
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
+    )
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
+        None,
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is matplotlib.axes._axes.Axes | None
+        """,
+    )
+    return_fig: bool | None = Field(
+        None,
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
+    )
+    marker: typing.Any = Field(
+        ".",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[str]
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.diffmap")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1333,28 +1858,36 @@ class ScPlHighlyVariableGenes(BaseAPI):
     Plot dispersions or normalized variance versus means for genes. Produces Supp. Fig. 5c of Zheng et al. (2017) and MeanVarPlot() and VariableFeaturePlot() of Seurat.
     """
 
-    adata_or_result: Any = Field(
-        ...,
-        description="Adata Or Result can be either AnnData, pd.DataFrame, or np.recarray.",
-        title="Adata Or Result",
+    adata_or_result: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        Original annotation is AnnData | pd.DataFrame | np.recarray
+        """,
     )
-    log: Optional[Any] = Field(
-        False, description="Plot on logarithmic axes if set to true.", title="Log"
+    log: bool = Field(
+        False,
+        description="""Plot on logarithmic axes.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="If set to true, show the plot without returning axis; can also be set to None.",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If set to true or a string, save the figure with the specified filename; the filetype is inferred from the extension ('.pdf', '.png', '.svg').",
-        title="Save",
-    )
-    highly_variable_genes: Optional[Any] = Field(
+    save: bool | str | None = Field(
+        # None,
         True,
-        description="Boolean value indicating whether the genes are highly variable or not.",
-        title="Highly Variable Genes",
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
+        Original annotation is bool | str | None
+        """,
+    )
+    highly_variable_genes: bool = Field(
+        True,
+        description="""No description available.
+        Original annotation is bool
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.highly_variable_genes")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1366,168 +1899,287 @@ class ScPlPca(BaseAPI):
     Scatter plot in PCA coordinates. Use the parameter `annotate_var_explained` to annotate the explained variance.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    color: Any = Field(
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
+    )
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes.",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    mask_obs: Any = Field(
-        None, description="No description available.", title="Mask Obs"
-    )
-    gene_symbols: Any = Field(
+    mask_obs: typing.Any = Field(
         None,
-        description="Column name that stores gene symbols in `.var` DataFrame.",
-        title="Gene Symbols",
+        description="""No description available.
+        Original annotation is numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None
+        """,
     )
-    use_raw: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Use `.raw` attribute of `adata` for coloring with gene expression.",
-        title="Use Raw",
+        description="""Column name in `.var` DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    use_raw: bool | None = Field(
+        None,
+        description="""Use `.raw` attribute of `adata` for coloring with gene expression.
+        Original annotation is bool | None
+        """,
+    )
+    sort_order: typing.Any = Field(
         True,
-        description="Plot data points with higher values on top for continuous annotations.",
-        title="Sort Order",
+        description="""For continuous annotations used as color parameter, plot data points with higher values on top of others.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges: Optional[Any] = Field(
-        False, description="No description available.", title="Edges"
+    edges: typing.Any = Field(
+        False,
+        description="""No description available.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges_width: Optional[Any] = Field(
-        0.1, description="No description available.", title="Edges Width"
+    edges_width: typing.Any = Field(
+        0.1,
+        description="""No description available.
+        Original annotation is <class 'float'>
+        """,
     )
-    edges_color: Optional[Any] = Field(
-        "grey", description="No description available.", title="Edges Color"
+    edges_color: typing.Any = Field(
+        "grey",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+        """,
     )
-    neighbors_key: Any = Field(
-        None, description="No description available.", title="Neighbors Key"
-    )
-    arrows: Optional[Any] = Field(
-        False, description="No description available.", title="Arrows"
-    )
-    arrows_kwds: Any = Field(
-        None, description="No description available.", title="Arrows Kwds"
-    )
-    groups: Any = Field(
+    neighbors_key: str | None = Field(
         None,
-        description="Restrict to a few categories in categorical observation annotation.",
-        title="Groups",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    components: Any = Field(
-        None, description="Plot specific components.", title="Components"
+    arrows: typing.Any = Field(
+        False,
+        description="""No description available.
+        Original annotation is <class 'bool'>
+        """,
     )
-    dimensions: Any = Field(
+    arrows_kwds: typing.Any = Field(
         None,
-        description="Dimensions of the embedding to plot as integers.",
-        title="Dimensions",
+        description="""No description available.
+        Original annotation is collections.abc.Mapping[str, typing.Any] | None
+        """,
     )
-    layer: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="Name of the AnnData object layer to be plotted.",
-        title="Layer",
+        description="""Restrict to a few categories in categorical observation annotation.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    projection: Optional[Any] = Field(
-        "2d", description="Projection of plot (default: '2d').", title="Projection"
-    )
-    scale_factor: Any = Field(
-        None, description="No description available.", title="Scale Factor"
-    )
-    color_map: Any = Field(
+    components: typing.Any = Field(
         None,
-        description="Color map to use for continuous variables.",
-        title="Color Map",
+        description="""Specify components for plotting.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    cmap: Any = Field(None, description="No description available.", title="Cmap")
-    palette: Any = Field(
+    dimensions: typing.Any = Field(
         None,
-        description="Colors to use for plotting categorical annotation groups.",
-        title="Palette",
+        description="""0-indexed dimensions of the embedding to plot as integers.
+        Original annotation is tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None
+        """,
     )
-    na_color: Optional[Any] = Field(
+    layer: str | None = Field(
+        None,
+        description="""Name of the AnnData object layer that wants to be plotted.
+        Original annotation is str | None
+        """,
+    )
+    projection: typing.Any = Field(
+        "2d",
+        description="""Projection of plot.
+        Original annotation is typing.Literal['2d', '3d']
+        """,
+    )
+    scale_factor: float | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is float | None
+        """,
+    )
+    color_map: typing.Any = Field(
+        None,
+        description="""Color map to use for continuous variables.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    cmap: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    palette: typing.Any = Field(
+        None,
+        description="""Colors to use for plotting categorical annotation groups.
+        Original annotation is str | collections.abc.Sequence[str] | cycler.Cycler | None
+        """,
+    )
+    na_color: str | tuple[float, ...] = Field(
         "lightgray",
-        description="Color to use for null or masked values.",
-        title="Na Color",
+        description="""Color to use for null or masked values.
+        Original annotation is str | tuple[float, ...]
+        """,
     )
-    na_in_legend: Optional[Any] = Field(
+    na_in_legend: typing.Any = Field(
         True,
-        description="Whether missing values get an entry in the legend.",
-        title="Na In Legend",
+        description="""Whether missing values get an entry in the legend.
+        Original annotation is <class 'bool'>
+        """,
     )
-    size: Any = Field(None, description="Point size for plotting.", title="Size")
-    frameon: Any = Field(
-        None, description="Draw a frame around the scatter plot.", title="Frameon"
-    )
-    legend_fontsize: Any = Field(
+    size: typing.Any = Field(
         None,
-        description="Numeric size or string describing the size of the legend font.",
-        title="Legend Fontsize",
+        description="""Point size.
+        Original annotation is float | collections.abc.Sequence[float] | None
+        """,
     )
-    legend_fontweight: Optional[Any] = Field(
-        "bold", description="Legend font weight.", title="Legend Fontweight"
-    )
-    legend_loc: Optional[Any] = Field(
-        "right margin", description="Location of legend.", title="Legend Loc"
-    )
-    legend_fontoutline: Any = Field(
+    frameon: bool | None = Field(
         None,
-        description="Line width of the legend font outline.",
-        title="Legend Fontoutline",
+        description="""Draw a frame around the scatter plot.
+        Original annotation is bool | None
+        """,
     )
-    colorbar_loc: Optional[Any] = Field(
+    legend_fontsize: typing.Any = Field(
+        None,
+        description="""Numeric size in pt or string describing the size.
+        Original annotation is typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]
+        """,
+    )
+    legend_fontweight: typing.Any = Field(
+        "bold",
+        description="""Legend font weight.
+        Original annotation is typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]
+        """,
+    )
+    legend_loc: typing.Any = Field(
+        "right margin",
+        description="""Location of legend.
+        Original annotation is typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]
+        """,
+    )
+    legend_fontoutline: int | None = Field(
+        None,
+        description="""Line width of the legend font outline.
+        Original annotation is int | None
+        """,
+    )
+    colorbar_loc: str | None = Field(
         "right",
-        description="Location to place the colorbar for continuous variables.",
-        title="Colorbar Loc",
+        description="""Where to place the colorbar for continuous variables.
+        Original annotation is str | None
+        """,
     )
-    vmax: Any = Field(
-        None, description="The upper limit of the color scale.", title="Vmax"
-    )
-    vmin: Any = Field(
-        None, description="The lower limit of the color scale.", title="Vmin"
-    )
-    vcenter: Any = Field(
-        None, description="The center of the color scale.", title="Vcenter"
-    )
-    norm: Any = Field(None, description="No description available.", title="Norm")
-    add_outline: Optional[Any] = Field(
-        False, description="Add a border around groups of dots.", title="Add Outline"
-    )
-    outline_width: Optional[Any] = Field(
-        [0.3, 0.05],
-        description="Width numbers used to adjust the outline.",
-        title="Outline Width",
-    )
-    outline_color: Optional[Any] = Field(
-        ["black", "white"],
-        description="Color names used to adjust the outline.",
-        title="Outline Color",
-    )
-    ncols: Optional[Any] = Field(
-        4, description="Number of panels per row.", title="Ncols"
-    )
-    hspace: Optional[Any] = Field(
-        0.25,
-        description="Adjust the height of the space between multiple panels.",
-        title="Hspace",
-    )
-    wspace: Any = Field(
+    vmax: typing.Any = Field(
         None,
-        description="Adjust the width of the space between multiple panels.",
-        title="Wspace",
+        description="""The upper limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    title: Any = Field(None, description="Title for panels.", title="Title")
-    show: Any = Field(
-        None, description="Show the plot, do not return axis.", title="Show"
+    vmin: typing.Any = Field(
+        None,
+        description="""The lower limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    save: Any = Field(None, description="Save the figure.", title="Save")
-    ax: Any = Field(None, description="Matplotlib axes object.", title="Ax")
-    return_fig: Any = Field(
-        None, description="Return the matplotlib figure.", title="Return Fig"
+    vcenter: typing.Any = Field(
+        None,
+        description="""The center of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
     )
-    marker: Optional[Any] = Field(
-        ".", description="No description available.", title="Marker"
+    norm: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None
+        """,
     )
-    annotate_var_explained: Optional[Any] = Field(
-        False, description="No description available.", title="Annotate Var Explained"
+    add_outline: bool | None = Field(
+        False,
+        description="""Add a thin border around groups of dots.
+        Original annotation is bool | None
+        """,
+    )
+    # outline_width: tuple[float, float] = Field(
+    #     (0.3, 0.05),
+    #     description="""Width numbers used to adjust the outline.
+    #     Original annotation is tuple[float, float]
+    #     """,
+    # )
+    # outline_color: tuple[str, str] = Field(
+    #     ("black", "white"),
+    #     description="""Valid color names used to adjust the add_outline.
+    #     Original annotation is tuple[str, str]
+    #     """,
+    # )
+    ncols: typing.Any = Field(
+        4,
+        description="""Number of panels per row.
+        Original annotation is <class 'int'>
+        """,
+    )
+    hspace: typing.Any = Field(
+        0.25,
+        description="""Height of the space between multiple panels.
+        Original annotation is <class 'float'>
+        """,
+    )
+    wspace: float | None = Field(
+        None,
+        description="""Width of the space between multiple panels.
+        Original annotation is float | None
+        """,
+    )
+    title: typing.Any = Field(
+        None,
+        description="""Provide title for panels.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    show: bool | None = Field(
+        None,
+        description="""Show the plot.
+        Original annotation is bool | None
+        """,
+    )
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""Save the figure.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
+        None,
+        description="""A matplotlib axes object.
+        Original annotation is matplotlib.axes._axes.Axes | None
+        """,
+    )
+    return_fig: bool | None = Field(
+        None,
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
+    )
+    marker: typing.Any = Field(
+        ".",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[str]
+        """,
+    )
+    annotate_var_explained: typing.Any = Field(
+        False,
+        description="""No description available.
+        Original annotation is <class 'bool'>
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.pca")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1536,108 +2188,127 @@ class ScPlPca(BaseAPI):
 
 class ScPlEmbeddingDensity(BaseAPI):
     """
-    Plot the density of cells in an embedding (per condition). Plots the gaussian kernel density estimates (over condition) from the sc.tl.embedding_density() output. This function was written by Sophie Tritschler and implemented into Scanpy by Malte Luecken.
+    Plot the density of cells in an embedding (per condition) by using gaussian kernel density estimates from the `sc.tl.embedding_density()` output.
     """
 
-    adata: Any = Field(
-        ...,
-        description="The annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""The annotated data matrix.
+        """,
     )
-    basis: Optional[Any] = Field(
+    basis: str = Field(
         "umap",
-        description="The embedding over which the density was calculated. This embedded representation should be found in `adata.obsm['X_[basis]']`. Original type annotation: str",
-        title="Basis",
+        description="""The embedding over which the density was calculated, found in `adata.obsm[\'X_[basis]\']`.
+        Original annotation is str
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Name of the `.obs` covariate that contains the density estimates. Alternatively, pass `groupby`. Original type annotation: str | None",
-        title="Key",
+        description="""Name of the `.obs` covariate that contains the density estimates or pass `groupby`.
+        Original annotation is str | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="Name of the condition used in `tl.embedding_density`. Alternatively, pass `key`. Original type annotation: str | None",
-        title="Groupby",
+        description="""Name of the condition used in `tl.embedding_density` or pass `key`.
+        Original annotation is str | None
+        """,
     )
-    group: Optional[Any] = Field(
+    group: str | Sequence[str] | None = Field(
         "all",
-        description="The category in the categorical observation annotation to be plotted. For example, 'G1' in the cell cycle 'phase' covariate. If all categories are to be plotted use group='all' (default), If multiple categories want to be plotted use a list (e.g.: ['G1', 'S']. If the overall density wants to be ploted set group to 'None'. Original type annotation: str | Sequence[str] | None",
-        title="Group",
+        description="""Category in the categorical observation annotation to be plotted, with options for different groupings and color representation.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    color_map: Optional[Any] = Field(
+    color_map: typing.Any = Field(
         "YlOrRd",
-        description="Matplolib color map to use for density plotting. Original type annotation: Colormap | str",
-        title="Color Map",
+        description="""Matplotlib color map used for density plotting.
+        Original annotation is Colormap | str
+        """,
     )
-    bg_dotsize: Optional[Any] = Field(
+    bg_dotsize: int | None = Field(
         80,
-        description="Dot size for background data points not in the `group`. Original type annotation: int | None",
-        title="Bg Dotsize",
+        description="""Dot size for background data points not in the `group`.
+        Original annotation is int | None
+        """,
     )
-    fg_dotsize: Optional[Any] = Field(
+    fg_dotsize: int | None = Field(
         180,
-        description="Dot size for foreground data points in the `group`. Original type annotation: int | None",
-        title="Fg Dotsize",
+        description="""Dot size for foreground data points in the `group`.
+        Original annotation is int | None
+        """,
     )
-    vmax: Optional[Any] = Field(
+    vmax: int | None = Field(
         1,
-        description="The value representing the upper limit of the color scale. The format is the same as for `vmin`. Original type annotation: int | None",
-        title="Vmax",
+        description="""The upper limit of the color scale for density representation.
+        Original annotation is int | None
+        """,
     )
-    vmin: Optional[Any] = Field(
+    vmin: int | None = Field(
         0,
-        description="The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin. vmin can be a number, a string, a function or `None`. If vmin is a string and has the format `pN`, this is interpreted as a vmin=percentile(N). For example vmin='p1.5' is interpreted as the 1.5 percentile. If vmin is function, then vmin is interpreted as the return value of the function over the list of values to plot. For example to set vmin to the mean of the values to plot, `def my_vmin(values): return np.mean(values)` and then set `vmin=my_vmin`. If vmin is None (default) an automatic minimum value is used as defined by matplotlib `scatter` function. When making multiple plots, vmin can be a list of values, one for each plot. For example `vmin=[0.1, 'p1', None, my_vmin]`. Original type annotation: int | None",
-        title="Vmin",
+        description="""The lower limit of the color scale for density representation, with various options for customization such as using percentiles or functions.
+        Original annotation is int | None
+        """,
     )
-    vcenter: Any = Field(
+    vcenter: int | None = Field(
         None,
-        description="The value representing the center of the color scale. Useful for diverging colormaps. The format is the same as for `vmin`. Example: `sc.pl.umap(adata, color='TREM2', vcenter='p50', cmap='RdBu_r')`. Original type annotation: int | None",
-        title="Vcenter",
+        description="""The center value of the color scale, useful for diverging colormaps.
+        Original annotation is int | None
+        """,
     )
-    norm: Any = Field(
+    norm: typing.Any = Field(
         None,
-        description="No description available. Original type annotation: Normalize | None",
-        title="Norm",
+        description="""No description available.
+        Original annotation is Normalize | None
+        """,
     )
-    ncols: Optional[Any] = Field(
+    ncols: int | None = Field(
         4,
-        description="Number of panels per row. Original type annotation: int | None",
-        title="Ncols",
+        description="""Number of panels per row for visualization.
+        Original annotation is int | None
+        """,
     )
-    hspace: Optional[Any] = Field(
+    hspace: float | None = Field(
         0.25,
-        description="Adjust the height of the space between multiple panels. Original type annotation: float | None",
-        title="Hspace",
+        description="""Adjust the height of the space between multiple panels.
+        Original annotation is float | None
+        """,
     )
-    wspace: Any = Field(
+    wspace: typing.Any = Field(
         None,
-        description="Adjust the width of the space between multiple panels. Original type annotation: None",
-        title="Wspace",
+        description="""Adjust the width of the space between multiple panels.
+        Original annotation is None
+        """,
     )
-    title: Any = Field(
+    title: str | None = Field(
         None,
-        description="No description available. Original type annotation: str | None",
-        title="Title",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot without returning axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {'.pdf', '.png', '.svg'}. Original type annotation: bool | str | None",
-        title="Save",
+    save: bool | str | None = Field(
+        True,
+        description="""Save the figure if `True` or a `str`, with inferred filetype based on extension.
+        Original annotation is bool | str | None
+        """,
     )
-    ax: Any = Field(
+    ax: typing.Any = Field(
         None,
-        description="A matplotlib axes object. Only works if plotting a single component. Original type annotation: Axes | None",
-        title="Ax",
+        description="""Matplotlib axes object, works when plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
-    return_fig: Any = Field(
+    return_fig: bool | None = Field(
         None,
-        description="Return the matplotlib figure. Original type annotation: bool | None",
-        title="Return Fig",
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.embedding_density")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1646,65 +2317,80 @@ class ScPlEmbeddingDensity(BaseAPI):
 
 class ScPlRankGenesGroups(BaseAPI):
     """
-    Plot ranking of genes.
+    Plot ranking of genes. Annotated data matrix. The groups for which to show the gene ranking. Key for field in `.var` that stores gene symbols if you do not want to use `.var_names`. Number of genes to show. Fontsize for gene names. Number of panels shown per row. Controls if the y-axis of each panels should be shared. Show the plot, do not return axis. If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}. A matplotlib axes object. Only works if plotting a single component.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix with original type annotation: AnnData.",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="The groups for which to show the gene ranking with original type annotation: str | Sequence[str] | None.",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Optional[Any] = Field(
+    n_genes: int = Field(
         20,
-        description="Number of genes to show with original type annotation: int.",
-        title="N Genes",
+        description="""Number of genes to show.
+        Original annotation is int
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Key for field in `.var` that stores gene symbols if you do not want to use `.var_names` with original type annotation: str | None.",
-        title="Gene Symbols",
+        description="""Key for field in `.var` that stores gene symbols if you do not want to use `.var_names`.
+        Original annotation is str | None
+        """,
     )
-    key: Optional[Any] = Field(
+    key: str | None = Field(
         "rank_genes_groups",
-        description="No description available with original type annotation: str | None.",
-        title="Key",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    fontsize: Optional[Any] = Field(
+    fontsize: int = Field(
         8,
-        description="Fontsize for gene names with original type annotation: int.",
-        title="Fontsize",
+        description="""Fontsize for gene names.
+        Original annotation is int
+        """,
     )
-    ncols: Optional[Any] = Field(
+    ncols: int = Field(
         4,
-        description="Number of panels shown per row with original type annotation: int.",
-        title="Ncols",
+        description="""Number of panels shown per row.
+        Original annotation is int
+        """,
     )
-    sharey: Optional[Any] = Field(
+    sharey: bool = Field(
         True,
-        description="Controls if the y-axis of each panel should be shared, with original type annotation: bool.",
-        title="Sharey",
+        description="""Controls if the y-axis of each panels should be shared. But passing `sharey=False`, each panel has its own y-axis range.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis with original type annotation: bool | None.",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`} with original type annotation: bool | None.",
-        title="Save",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
-    ax: Any = Field(
-        None,
-        description="A matplotlib axes object. Only works if plotting a single component with original type annotation: Axes | None.",
-        title="Ax",
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -1712,70 +2398,86 @@ class ScPlRankGenesGroups(BaseAPI):
 
 class ScPlRankGenesGroupsDotplot(BaseAPI):
     """
-    Plot ranking of genes using dotplot plot (see :func:`~scanpy.pl.dotplot`).
+    Plot ranking of genes using dotplot plot.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: str | Sequence[str] | None = Field(
         None,
-        description="The groups for which to show the gene ranking. Original type annotation: str | Sequence[str] | None",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to show. This can be a negative number to show for example the down regulated genes. Original type annotation: int | None",
-        title="N Genes",
+        description="""Number of genes to show, can be negative to indicate downregulated genes.
+        Original annotation is int | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used. Original type annotation: str | None",
-        title="Groupby",
+        description="""Key of the observation grouping to consider, expected to be categorical.
+        Original annotation is str | None
+        """,
     )
-    values_to_plot: Any = Field(
+    values_to_plot: typing.Any = Field(
         None,
-        description="Instead of the mean gene value, plot the values computed by `sc.rank_genes_groups`. The options are: ['scores', 'logfoldchanges', 'pvals', 'pvals_adj', 'log10_pvals', 'log10_pvals_adj']. Original type annotation: Literal['scores', 'logfoldchanges', 'pvals', 'pvals_adj', 'log10_pvals', 'log10_pvals_adj'] | None",
-        title="Values To Plot",
+        description="""Plot values computed by `sc.rank_genes_groups` instead of mean gene value.
+        Original annotation is Literal['scores', 'logfoldchanges', 'pvals', 'pvals_adj', 'log10_pvals', 'log10_pvals_adj'] | None
+        """,
     )
-    var_names: Any = Field(
+    var_names: typing.Any = Field(
         None,
-        description="Genes to plot. Sometimes is useful to pass a specific list of var names (e.g. genes) to check their fold changes or p-values, instead of the top/bottom genes. Original type annotation: Sequence[str] | Mapping[str, Sequence[str]] | None",
-        title="Var Names",
+        description="""Genes to plot, can be a specific list or dictionary.
+        Original annotation is Sequence[str] | Mapping[str, Sequence[str]] | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame storing gene symbols.
+        Original annotation is str | None
+        """,
     )
-    min_logfoldchange: Any = Field(
+    min_logfoldchange: float | None = Field(
         None,
-        description="Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange. Original type annotation: float | None",
-        title="Min Logfoldchange",
+        description="""Value to filter genes based on logfoldchange.
+        Original annotation is float | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Key used to store the ranking results in `adata.uns`. Original type annotation: str | None",
-        title="Key",
+        description="""Key used to store ranking results in `adata.uns`.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot without returning axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: bool | None",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""Save the figure with inferred filetype.
+        Original annotation is bool | None
+        """,
     )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool = Field(
         False,
-        description="Returns :class:`DotPlot` object. Useful for fine-tuning the plot. Takes precedence over `show=False`. Original type annotation: bool",
-        title="Return Fig",
+        description="""Returns `DotPlot` object, useful for fine-tuning the plot.
+        Original annotation is bool
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Additional parameters passed to `scanpy.pl.dotplot`.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_dotplot")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -1786,85 +2488,101 @@ class ScPlRankGenesGroupsViolin(BaseAPI):
     Plot ranking of genes for all tested comparisons.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="List of group names. Original type annotation: Sequence[str] | None",
-        title="Groups",
+        description="""List of group names.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    n_genes: Optional[Any] = Field(
+    n_genes: int = Field(
         20,
-        description="Number of genes to show. Is ignored if `gene_names` is passed. Original type annotation: int",
-        title="N Genes",
+        description="""Number of genes to show. Is ignored if `gene_names` is passed.
+        Original annotation is int
+        """,
     )
-    gene_names: Any = Field(
+    gene_names: Iterable[str] | None = Field(
         None,
-        description="List of genes to plot. Is only useful if interested in a custom gene list, which is not the result of :func:`scanpy.tl.rank_genes_groups`. Original type annotation: Iterable[str] | None",
-        title="Gene Names",
+        description="""List of genes to plot. Is only useful if interested in a custom gene list, which is not the result of :func:`scanpy.tl.rank_genes_groups`.
+        Original annotation is Iterable[str] | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Key for field in `.var` that stores gene symbols if you do not want to use `.var_names` displayed in the plot. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Key for field in `.var` that stores gene symbols if you do not want to use `.var_names` displayed in the plot.
+        Original annotation is str | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Use `raw` attribute of `adata` if present. Defaults to the value that was used in :func:`~scanpy.tl.rank_genes_groups`. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Use `raw` attribute of `adata` if present. Defaults to the value that was used in :func:`~scanpy.tl.rank_genes_groups`.
+        Original annotation is bool | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="No description available. Original type annotation: str | None",
-        title="Key",
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    split: Optional[Any] = Field(
+    split: bool = Field(
         True,
-        description="Whether to split the violins or not. Original type annotation: bool",
-        title="Split",
+        description="""Whether to split the violins or not.
+        Original annotation is bool
+        """,
     )
-    density_norm: Optional[Any] = Field(
+    density_norm: typing.Any = Field(
         "width",
-        description="See :func:`~seaborn.violinplot`. Original type annotation: DensityNorm",
-        title="Density Norm",
+        description="""See :func:`~seaborn.violinplot`.
+        Original annotation is DensityNorm
+        """,
     )
-    strip: Optional[Any] = Field(
+    strip: bool = Field(
         True,
-        description="Show a strip plot on top of the violin plot. Original type annotation: bool",
-        title="Strip",
+        description="""Show a strip plot on top of the violin plot.
+        Original annotation is bool
+        """,
     )
-    jitter: Optional[Any] = Field(
+    jitter: float | bool = Field(
         True,
-        description="If set to 0, no points are drawn. See :func:`~seaborn.stripplot`. Original type annotation: float | bool",
-        title="Jitter",
+        description="""If set to 0, no points are drawn. See :func:`~seaborn.stripplot`.
+        Original annotation is float | bool
+        """,
     )
-    size: Optional[Any] = Field(
+    size: int = Field(
         1,
-        description="Size of the jitter points. Original type annotation: int",
-        title="Size",
+        description="""Size of the jitter points.
+        Original annotation is int
+        """,
     )
-    ax: Any = Field(
+    ax: typing.Any = Field(
         None,
-        description="A matplotlib axes object. Only works if plotting a single component. Original type annotation: Axes | None",
-        title="Ax",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: bool | None",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | None
+        """,
     )
-    scale: Optional[Any] = Field(
-        0,
-        description="No description available. Original type annotation: DensityNorm | Empty",
-        title="Scale",
+    scale: typing.Any = Field(
+        "Empty.token",
+        description="""No description available.
+        Original annotation is DensityNorm | Empty
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_violin")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1876,58 +2594,70 @@ class ScPlRankGenesGroupsHeatmap(BaseAPI):
     Plot ranking of genes using heatmap plot (see :func:`~scanpy.pl.heatmap`).
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix with original type annotation as AnnData.",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="The groups for which to show the gene ranking; can be a string, a sequence of strings, or None.",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to display, which can be negative to show down-regulated genes; can be an integer or None.",
-        title="N Genes",
+        description="""Number of genes to show. This can be a negative number to show for example the down regulated genes. eg: num_genes=-10. Is ignored if `gene_names` is passed.
+        Original annotation is int | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider, expected to be a categorical string or None.",
-        title="Groupby",
+        description="""The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used. It is expected that groupby is a categorical. If groupby is not a categorical observation, it would be subdivided into `num_categories` (see :func:`~scanpy.pl.dotplot`)
+        Original annotation is str | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in the .var DataFrame that contains gene symbols, allowing alternative names to be used.",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Setting this option allows alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    var_names: Any = Field(
+    var_names: Sequence[str] | Mapping[str, Sequence[str]] | None = Field(
         None,
-        description="Sequence of strings or mapping in the .var DataFrame; no detailed description available.",
-        title="Var Names",
+        description="""No description available.
+        Original annotation is Sequence[str] | Mapping[str, Sequence[str]] | None
+        """,
     )
-    min_logfoldchange: Any = Field(
+    min_logfoldchange: float | None = Field(
         None,
-        description="Value used to filter genes in groups based on logfoldchange; can be a float or None.",
-        title="Min Logfoldchange",
+        description="""Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange
+        Original annotation is float | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Key to store the ranking results in adata.uns; can be a string or None.",
-        title="Key",
+        description="""Key used to store the ranking results in `adata.uns`.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Option to display the plot without returning the axis; can be a boolean or None.",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="Option to save the figure, where a string is appended to the default filename; can be a boolean or None.",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | None
+        """,
     )
-    kwds: Any = Field(
-        ..., description="No detailed description available.", title="Kwds"
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_heatmap")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -1939,62 +2669,77 @@ class ScPlRankGenesGroupsStackedViolin(BaseAPI):
     Plot ranking of genes using stacked_violin plot.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: str | Sequence[str] | None = Field(
         None,
-        description="The groups for which to show the gene ranking. Original type annotation: str | Sequence[str] | None",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to show. This can be a negative number to show for example the down regulated genes. Is ignored if `gene_names` is passed. Original type annotation: int | None",
-        title="N Genes",
+        description="""Number of genes to show, with the option to show down regulated genes.
+        Original annotation is int | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider. It is expected that groupby is a categorical. Original type annotation: str | None",
-        title="Groupby",
+        description="""The key of the observation grouping to consider, typically a categorical variable.
+        Original annotation is str | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols, allowing alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    var_names: Any = Field(
+    var_names: Sequence[str] | Mapping[str, Sequence[str]] | None = Field(
         None,
-        description="No description available. Original type annotation: Sequence[str] | Mapping[str, Sequence[str]] | None",
-        title="Var Names",
+        description="""No description available.
+        Original annotation is Sequence[str] | Mapping[str, Sequence[str]] | None
+        """,
     )
-    min_logfoldchange: Any = Field(
+    min_logfoldchange: float | None = Field(
         None,
-        description="Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange. Original type annotation: float | None",
-        title="Min Logfoldchange",
+        description="""Value to filter genes in groups based on their logfoldchange.
+        Original annotation is float | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Key used to store the ranking results in `adata.uns`. Original type annotation: str | None",
-        title="Key",
+        description="""Key used to store the ranking results in `adata.uns`.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot without returning the axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. Infer the filetype if ending on {'.pdf', '.png', '.svg'}. Original type annotation: bool | None",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""Option to save the figure, with automatic file type inference from the filename.
+        Original annotation is bool | None
+        """,
     )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool = Field(
         False,
-        description="Returns :class:`StackedViolin` object. Useful for fine-tuning the plot. Original type annotation: bool",
-        title="Return Fig",
+        description="""Returns a `StackedViolin` object, useful for fine-tuning the plot and takes precedence over `show=False`.
+        Original annotation is bool
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_stacked_violin")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2002,70 +2747,86 @@ class ScPlRankGenesGroupsStackedViolin(BaseAPI):
 
 class ScPlRankGenesGroupsMatrixplot(BaseAPI):
     """
-    Plot ranking of genes using matrixplot plot (see :func:`~scanpy.pl.matrixplot`).
+    Plot ranking of genes using matrixplot plot (see :func:`~scanpy.pl.matrixplot`). Parameters and examples are provided in the description.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: typing.Any = Field(
         None,
-        description="The groups for which to show the gene ranking. Original type annotation: str | Sequence[str] | None",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to show. This can be a negative number to show for example the down regulated genes. Original type annotation: int | None",
-        title="N Genes",
+        description="""Number of genes to show. This can be a negative number to show for example the down regulated genes.
+        Original annotation is int | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used. Original type annotation: str | None",
-        title="Groupby",
+        description="""The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used.
+        Original annotation is str | None
+        """,
     )
-    values_to_plot: Any = Field(
+    values_to_plot: typing.Any = Field(
         None,
-        description="Instead of the mean gene value, plot the values computed by sc.rank_genes_groups. Original type annotation: Literal['scores', 'logfoldchanges', 'pvals', 'pvals_adj', 'log10_pvals', 'log10_pvals_adj'] | None",
-        title="Values To Plot",
+        description="""Instead of the mean gene value, plot the values computed by `sc.rank_genes_groups`. Options are provided for different values to plot.
+        Original annotation is Literal['scores', 'logfoldchanges', 'pvals', 'pvals_adj', 'log10_pvals', 'log10_pvals_adj'] | None
+        """,
     )
-    var_names: Any = Field(
+    var_names: typing.Any = Field(
         None,
-        description="Genes to plot. Sometimes is useful to pass a specific list of var names (e.g. genes) to check their fold changes or p-values. Original type annotation: Sequence[str] | Mapping[str, Sequence[str]] | None",
-        title="Var Names",
+        description="""Genes to plot. Sometimes is useful to pass a specific list of var names to check their fold changes or p-values.
+        Original annotation is Sequence[str] | Mapping[str, Sequence[str]] | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in .var DataFrame that stores gene symbols. By default var_names refer to the index column of the .var DataFrame. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols. Allows alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    min_logfoldchange: Any = Field(
+    min_logfoldchange: float | None = Field(
         None,
-        description="Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange. Original type annotation: float | None",
-        title="Min Logfoldchange",
+        description="""Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange.
+        Original annotation is float | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Key used to store the ranking results in adata.uns. Original type annotation: str | None",
-        title="Key",
+        description="""Key used to store the ranking results in `adata.uns`.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If True or a str, save the figure. A string is appended to the default filename. Original type annotation: bool | None",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure with inferred filetype.
+        Original annotation is bool | None
+        """,
     )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool = Field(
         False,
-        description="Returns MatrixPlot object. Useful for fine-tuning the plot. Takes precedence over show=False. Original type annotation: bool",
-        title="Return Fig",
+        description="""Returns :class:`MatrixPlot` object. Useful for fine-tuning the plot. Takes precedence over `show=False`.
+        Original annotation is bool
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_matrixplot")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2076,57 +2837,71 @@ class ScPlRankGenesGroupsTracksplot(BaseAPI):
     Plot ranking of genes using heatmap plot (see :func:`~scanpy.pl.heatmap`).
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    groups: Any = Field(
+    groups: str | Sequence[str] | None = Field(
         None,
-        description="The groups for which to show the gene ranking. Original type annotation: str | Sequence[str] | None",
-        title="Groups",
+        description="""The groups for which to show the gene ranking.
+        Original annotation is str | Sequence[str] | None
+        """,
     )
-    n_genes: Any = Field(
+    n_genes: int | None = Field(
         None,
-        description="Number of genes to show. This can be a negative number to show for example the down regulated genes. Is ignored if gene_names is passed. Original type annotation: int | None",
-        title="N Genes",
+        description="""Number of genes to show. This can be a negative number to show for example the down regulated genes. Is ignored if `gene_names` is passed.
+        Original annotation is int | None
+        """,
     )
-    groupby: Any = Field(
+    groupby: str | None = Field(
         None,
-        description="The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used. Expected to be a categorical. Original type annotation: str | None",
-        title="Groupby",
+        description="""The key of the observation grouping to consider. By default, the groupby is chosen from the rank genes groups parameter but other groupby options can be used.
+        Original annotation is str | None
+        """,
     )
-    var_names: Any = Field(
+    var_names: typing.Any = Field(
         None,
-        description="No description available. Original type annotation: Sequence[str] | Mapping[str, Sequence[str]] | None",
-        title="Var Names",
+        description="""No description available.
+        Original annotation is Sequence[str] | Mapping[str, Sequence[str]] | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in .var DataFrame that stores gene symbols. By default var_names refer to the index column of the .var DataFrame. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Setting this option allows alternative names to be used.
+        Original annotation is str | None
+        """,
     )
-    min_logfoldchange: Any = Field(
+    min_logfoldchange: float | None = Field(
         None,
-        description="Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange. Original type annotation: float | None",
-        title="Min Logfoldchange",
+        description="""Value to filter genes in groups if their logfoldchange is less than the min_logfoldchange
+        Original annotation is float | None
+        """,
     )
-    key: Any = Field(
+    key: str | None = Field(
         None,
-        description="Key used to store the ranking results in adata.uns. Original type annotation: str | None",
-        title="Key",
+        description="""Key used to store the ranking results in `adata.uns`.
+        Original annotation is str | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If True or a str, save the figure. A string is appended to the default filename. Infer the filetype if ending on {'.pdf', '.png', '.svg'}. Original type annotation: bool | None",
-        title="Save",
+    save: bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | None
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_tracksplot")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2134,48 +2909,62 @@ class ScPlRankGenesGroupsTracksplot(BaseAPI):
 
 class ScPlHighestExprGenes(BaseAPI):
     """
-    Fraction of counts assigned to each gene over all cells. Computes, for each gene, the fraction of counts assigned to that gene within a cell. The `n_top` genes with the highest mean fraction over all cells are plotted as boxplots. This plot is similar to the `scater` package function `plotHighestExprs(type = 'highest-expression')`, see [here](https://bioconductor.org/packages/devel/bioc/vignettes/scater/inst/doc/vignette-qc.html). Quoting from there: 'We expect to see the “usual suspects”, i.e., mitochondrial genes, actin, ribosomal protein, MALAT1. A few spike-in transcripts may also be present here, though if all of the spike-ins are in the top 50, it suggests that too much spike-in RNA was added. A large number of pseudo-genes or predicted genes may indicate problems with alignment.' -- Davis McCarthy and Aaron Lun
+    Fraction of counts assigned to each gene over all cells.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    n_top: Optional[Any] = Field(
-        30, description="Number of top. Original type annotation: int", title="N Top"
+    n_top: int = Field(
+        30,
+        description="""Number of top
+        Original annotation is int
+        """,
     )
-    layer: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Layer from which to pull data. Original type annotation: str | None",
-        title="Layer",
+        description="""Layer from which to pull data.
+        Original annotation is str | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Key for field in .var that stores gene symbols if you do not want to use .var_names. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Key for field in .var that stores gene symbols if you do not want to use .var_names.
+        Original annotation is str | None
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Plot x-axis in log scale. Original type annotation: bool",
-        title="Log",
+        description="""Plot x-axis in log scale
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is str | bool | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: str | bool | None",
-        title="Save",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is Axes | None
+        """,
     )
-    ax: Any = Field(
-        None,
-        description="A matplotlib axes object. Only works if plotting a single component. Original type annotation: Axes | None",
-        title="Ax",
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
     _api_name: str = PrivateAttr(default="sc.pl.highest_expr_genes")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2183,75 +2972,91 @@ class ScPlHighestExprGenes(BaseAPI):
 
 class ScPlTracksplot(BaseAPI):
     """
-    Compact plot of expression of a list of genes. In this type of plot each var_name is plotted as a filled line plot where the y values correspond to the var_name values and x is each of the cells. Best results are obtained when using raw counts that are not log. 'groupby' is required to sort and order the values using the respective group and should be a categorical value.
+    Compact plot of expression of a list of genes. Parameters such as `groupby`, `use_raw`, and `log` are crucial for obtaining the best results. Additionally, features like `dendrogram` and `var_group_positions` can provide valuable insights into the data structure.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix containing the data to be visualized.
+        """,
     )
-    var_names: Any = Field(
-        ...,
-        description="`var_names` should be a valid subset of `adata.var_names`. If `var_names` is a mapping, then the key is used as a label to group the values. The mapping values should be sequences of valid `adata.var_names`. When `var_names` is a mapping, `var_group_labels` and `var_group_positions` are set. Original type annotation: _VarNames | Mapping[str, _VarNames]",
-        title="Var Names",
+    var_names: typing.Any = Field(
+        Ellipsis,
+        description="""Defines the genes or features to be plotted, either as a list or a mapping that allows for grouping. It includes options to customize the visualization based on these groupings.
+        Original annotation is _VarNames | Mapping[str, _VarNames]
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="The key of the observation grouping to consider. Original type annotation: str",
-        title="Groupby",
+    groupby: str = Field(
+        Ellipsis,
+        description="""Specifies the key for grouping the observations in the plot.
+        Original annotation is str
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Use `raw` attribute of `adata` if present. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Determines whether to use raw data for plotting, if available.
+        Original annotation is bool | None
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Plot on logarithmic axis. Original type annotation: bool",
-        title="Log",
+        description="""Specifies whether to plot the data on a logarithmic scale.
+        Original annotation is bool
+        """,
     )
-    dendrogram: Optional[Any] = Field(
+    dendrogram: bool | str = Field(
         False,
-        description="If True or a valid dendrogram key, a dendrogram based on the hierarchical clustering between the `groupby` categories is added. The dendrogram information is computed using :func:`scanpy.tl.dendrogram`. Original type annotation: bool | str",
-        title="Dendrogram",
+        description="""Controls the addition of a dendrogram based on hierarchical clustering of the groupby categories.
+        Original annotation is bool | str
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. By default `var_names` refer to the index column of the `.var` DataFrame. Setting this option allows alternative names to be used. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in the dataset that stores gene symbols, allowing for alternative names to be used in the visualization.
+        Original annotation is str | None
+        """,
     )
-    var_group_positions: Any = Field(
+    # var_group_positions: Sequence[tuple[int, int]] | None = Field(
+    #     None,
+    #     description="""Highlights specified groups of var_names by adding brackets or color blocks between the given positions. Labels can be added for clarity.
+    #     Original annotation is Sequence[tuple[int, int]] | None
+    #     """,
+    # )
+    var_group_labels: typing.Any = Field(
         None,
-        description="Use this parameter to highlight groups of `var_names`. This will draw a 'bracket' or a color block between the given start and end positions. If the parameter `var_group_labels` is set, the corresponding labels are added on top/left. Original type annotation: Sequence[tuple[int, int]] | None",
-        title="Var Group Positions",
+        description="""Provides labels for the var_group_positions to be highlighted in the plot.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    var_group_labels: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Labels for each of the `var_group_positions` that want to be highlighted. Original type annotation: Sequence[str] | None",
-        title="Var Group Labels",
+        description="""Defines the specific layer of the data to be plotted, with options to prioritize a particular layer over the raw data.
+        Original annotation is str | None
+        """,
     )
-    layer: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Name of the AnnData object layer that wants to be plotted. By default adata.raw.X is plotted. If `use_raw=False` is set, then `adata.X` is plotted. If `layer` is set to a valid layer name, then the layer is plotted. `layer` takes precedence over `use_raw`. Original type annotation: str | None",
-        title="Layer",
+        description="""Specifies whether to display the plot or just return the axis object.
+        Original annotation is bool | None
+        """,
     )
-    show: Any = Field(
-        None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+    save: str | bool | None = Field(
+        True,
+        description="""Controls the saving of the figure, with options to specify the file type and filename.
+        Original annotation is str | bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: str | bool | None",
-        title="Save",
+    # figsize: tuple[float, float] | None = Field(
+    #     None,
+    #     description="""Determines the size of the figure when `multi_panel=True`, otherwise defaults to the standard figure size.
+    #     Original annotation is tuple[float, float] | None
+    #     """,
+    # )
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Additional keyword arguments that are passed to the plotting function.
+        """,
     )
-    figsize: Any = Field(
-        None,
-        description="Figure size when `multi_panel=True`. Otherwise the `rcParam['figure.figsize]` value is used. Format is (width, height). Original type annotation: tuple[float, float] | None",
-        title="Figsize",
-    )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
     _api_name: str = PrivateAttr(default="sc.pl.tracksplot")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2259,35 +3064,44 @@ class ScPlTracksplot(BaseAPI):
 
 class ScPlClustermap(BaseAPI):
     """
-    Hierarchically-clustered heatmap. Wraps seaborn.clustermap for anndata.AnnData.
+    Hierarchically-clustered heatmap. Wraps :func:`seaborn.clustermap` for :class:`~anndata.AnnData`.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    obs_keys: Any = Field(
+    obs_keys: str | None = Field(
         None,
-        description="Categorical annotation to plot with a different color map. Currently, only a single key is supported. Original type annotation: str | None",
-        title="Obs Keys",
+        description="""Categorical annotation to plot with a different color map. Currently, only a single key is supported.
+        Original annotation is str | None
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Whether to use `raw` attribute of `adata`. Defaults to `True` if `.raw` is present. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Whether to use `raw` attribute of `adata`. Defaults to `True` if `.raw` is present.
+        Original annotation is bool | None
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: bool | str | None",
-        title="Save",
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""If `True` or a `str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`\'.pdf\'`, `\'.png\'`, `\'.svg\'`}.
+        Original annotation is bool | str | None
+        """,
     )
-    kwds: Any = Field(..., description="No description available.", title="Kwds")
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
+    )
     _api_name: str = PrivateAttr(default="sc.pl.clustermap")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
@@ -2295,174 +3109,222 @@ class ScPlClustermap(BaseAPI):
 
 class ScPlStackedViolin(BaseAPI):
     """
-    Makes a compact image composed of individual violin plots stacked on top of each other. Useful for visualizing gene expression per cluster. Wraps seaborn.violinplot for AnnData. Provides a convenient interface to the StackedViolin class in scanpy.pl.
+    Stacked violin plots. Makes a compact image composed of individual violin plots stacked on top of each other. Useful to visualize gene expression per cluster. Wraps seaborn.violinplot for anndata.AnnData.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix representing the data to be visualized.",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    var_names: Any = Field(
-        ...,
-        description="Subset of variable names to be used for grouping or coloring in the plot.",
-        title="Var Names",
+    var_names: typing.Any = Field(
+        Ellipsis,
+        description="""`var_names` should be a valid subset of `adata.var_names`. If `var_names` is a mapping, then the key is used as a label to group the values. The mapping values should be sequences of valid `adata.var_names`.
+        Original annotation is _VarNames | Mapping[str, _VarNames]
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="Key specifying the observation grouping to consider for the plot.",
-        title="Groupby",
+    groupby: str | Sequence[str] = Field(
+        Ellipsis,
+        description="""The key of the observation grouping to consider.
+        Original annotation is str | Sequence[str]
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Boolean indicating whether to plot on a logarithmic axis.",
-        title="Log",
+        description="""Plot on logarithmic axis.
+        Original annotation is bool
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Boolean indicating whether to use the 'raw' attribute of the data if present.",
-        title="Use Raw",
+        description="""Use `raw` attribute of `adata` if present.
+        Original annotation is bool | None
+        """,
     )
-    num_categories: Optional[Any] = Field(
+    num_categories: int = Field(
         7,
-        description="Number of groups to subdivide non-categorical groupby observations into.",
-        title="Num Categories",
+        description="""Determines the number of groups into which the groupby observation should be subdivided.
+        Original annotation is int
+        """,
     )
-    title: Any = Field(
-        None, description="Title for the figure to be displayed.", title="Title"
-    )
-    colorbar_title: Optional[Any] = Field(
-        "Median expression\nin group",
-        description="Title for the color bar in the plot.",
-        title="Colorbar Title",
-    )
-    figsize: Any = Field(
+    title: str | None = Field(
         None,
-        description="Size of the figure when multiple panels are used.",
-        title="Figsize",
+        description="""Title for the figure.
+        Original annotation is str | None
+        """,
     )
-    dendrogram: Optional[Any] = Field(
+    colorbar_title: str | None = Field(
+        "Median expression in group",
+        description="""Title for the color bar. New line character (\\n) can be used.
+        Original annotation is str | None
+        """,
+    )
+    # figsize: tuple[float, float] | None = Field(
+    #     None,
+    #     description="""Figure size when `multi_panel=True`. Otherwise the default figsize value is used.
+    #     Original annotation is tuple[float, float] | None
+    #     """,
+    # )
+    dendrogram: bool | str = Field(
         False,
-        description="Option to add a dendrogram based on hierarchical clustering between groupby categories.",
-        title="Dendrogram",
+        description="""If True or a valid dendrogram key, a dendrogram based on the hierarchical clustering between the `groupby` categories is added.
+        Original annotation is bool | str
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in the data frame that stores gene symbols.",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    var_group_positions: Any = Field(
+    # var_group_positions: Sequence[tuple[int, int]] | None = Field(
+    #     None,
+    #     description="""Use this parameter to highlight groups of `var_names`. This will draw a \'bracket\' or a color block between the given start and end positions.
+    #     Original annotation is Sequence[tuple[int, int]] | None
+    #     """,
+    # )
+    var_group_labels: typing.Any = Field(
         None,
-        description="Positions to highlight groups of variable names in the plot.",
-        title="Var Group Positions",
+        description="""Labels for each of the `var_group_positions` that want to be highlighted.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    var_group_labels: Any = Field(
+    standard_scale: Literal["var", "group"] | None = Field(
         None,
-        description="Labels for the var_group_positions to be highlighted.",
-        title="Var Group Labels",
+        description="""Whether or not to standardize the given dimension between 0 and 1.
+        Original annotation is Literal['var', 'group'] | None
+        """,
     )
-    standard_scale: Any = Field(
+    var_group_rotation: float | None = Field(
         None,
-        description="Option to standardize the given dimension between 0 and 1.",
-        title="Standard Scale",
+        description="""Label rotation degrees.
+        Original annotation is float | None
+        """,
     )
-    var_group_rotation: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Degree of label rotation in the plot.",
-        title="Var Group Rotation",
+        description="""Name of the AnnData object layer that wants to be plotted.
+        Original annotation is str | None
+        """,
     )
-    layer: Any = Field(
-        None, description="Name of the data layer to be plotted.", title="Layer"
-    )
-    categories_order: Any = Field(
+    categories_order: typing.Any = Field(
         None,
-        description="Order in which to display the categories in the plot.",
-        title="Categories Order",
+        description="""Order in which to show the categories.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    swap_axes: Optional[Any] = Field(
+    swap_axes: bool = Field(
         False,
-        description="Boolean indicating whether to swap the x and y axes in the plot.",
-        title="Swap Axes",
+        description="""By setting `swap_axes`, the x and y axes are swapped.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Boolean indicating whether to display the plot without returning the axis object.",
-        title="Show",
+        description="""Show the plot, do not return the axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
-        None,
-        description="Option to save the figure with a specified filename.",
-        title="Save",
+    save: bool | str | None = Field(
+        True,
+        description="""Save the figure. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
+        Original annotation is bool | str | None
+        """,
     )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool | None = Field(
         False,
-        description="Boolean indicating whether to return the DotPlot object for fine-tuning.",
-        title="Return Fig",
+        description="""Returns a DotPlot object. Useful for fine-tuning the plot.
+        Original annotation is bool | None
+        """,
     )
-    ax: Any = Field(
+    ax: typing.Any = Field(
         None,
-        description="Matplotlib axes object to be used for plotting a single component.",
-        title="Ax",
+        description="""A matplotlib axes object. Only works if plotting a single component.
+        Original annotation is _AxesSubplot | None
+        """,
     )
-    vmin: Any = Field(
-        None, description="Lower limit of the color scale in the plot.", title="Vmin"
-    )
-    vmax: Any = Field(
-        None, description="Upper limit of the color scale in the plot.", title="Vmax"
-    )
-    vcenter: Any = Field(
+    vmin: float | None = Field(
         None,
-        description="Value representing the center of the color scale for diverging colormaps.",
-        title="Vcenter",
+        description="""The value representing the lower limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    norm: Any = Field(
+    vmax: float | None = Field(
         None,
-        description="Custom color normalization object from matplotlib.",
-        title="Norm",
+        description="""The value representing the upper limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    cmap: Optional[Any] = Field(
+    vcenter: float | None = Field(
+        None,
+        description="""The value representing the center of the color scale.
+        Original annotation is float | None
+        """,
+    )
+    norm: typing.Any = Field(
+        None,
+        description="""Custom color normalization object from matplotlib.
+        Original annotation is Normalize | None
+        """,
+    )
+    cmap: typing.Any = Field(
         "Blues",
-        description="String denoting the matplotlib colormap for coloring.",
-        title="Cmap",
+        description="""String denoting matplotlib color map.
+        Original annotation is Colormap | str | None
+        """,
     )
-    stripplot: Optional[Any] = Field(
+    stripplot: bool = Field(
         False,
-        description="Boolean indicating whether to add a stripplot on top of the violin plot.",
-        title="Stripplot",
+        description="""Add a stripplot on top of the violin plot.
+        Original annotation is bool
+        """,
     )
-    jitter: Optional[Any] = Field(
+    jitter: float | bool = Field(
         False,
-        description="Amount of jitter to be added to the stripplot points.",
-        title="Jitter",
+        description="""Add jitter to the stripplot when stripplot is True.
+        Original annotation is float | bool
+        """,
     )
-    size: Optional[Any] = Field(
-        1, description="Size of the jitter points in the stripplot.", title="Size"
+    size: float = Field(
+        1,
+        description="""Size of the jitter points.
+        Original annotation is float
+        """,
     )
-    row_palette: Any = Field(
+    row_palette: str | None = Field(
         None,
-        description="Palette to be used for coloring each violin plot row.",
-        title="Row Palette",
+        description="""Color each violin plot row using a different color.
+        Original annotation is str | None
+        """,
     )
-    density_norm: Optional[Any] = Field(
-        0,
-        description="Method used to scale the width of each violin in the plot.",
-        title="Density Norm",
+    density_norm: typing.Any = Field(
+        "Empty.token",
+        description="""The method used to scale the width of each violin.
+        Original annotation is DensityNorm | Empty
+        """,
     )
-    yticklabels: Optional[Any] = Field(
+    yticklabels: bool = Field(
         False,
-        description="Boolean indicating whether to display the y-axis tick labels.",
-        title="Yticklabels",
+        description="""Set to true to view the y tick labels.
+        Original annotation is bool
+        """,
     )
-    order: Optional[Any] = Field(
-        0, description="Order in which to display the data categories.", title="Order"
+    order: typing.Any = Field(
+        "Empty.token",
+        description="""No description available.
+        Original annotation is Sequence[str] | None | Empty
+        """,
     )
-    scale: Optional[Any] = Field(
-        0, description="Scaling method for the plot.", title="Scale"
+    scale: typing.Any = Field(
+        "Empty.token",
+        description="""No description available.
+        Original annotation is DensityNorm | Empty
+        """,
     )
-    kwds: Any = Field(
-        ...,
-        description="Additional parameters for customization not explicitly described.",
-        title="Kwds",
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""No description available.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.stacked_violin")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -2471,151 +3333,180 @@ class ScPlStackedViolin(BaseAPI):
 
 class ScPlMatrixplot(BaseAPI):
     """
-    Create a heatmap of the mean expression values per group of each var_names. This function provides a convenient interface to the scanpy.pl.MatrixPlot class. If you need more flexibility, you should use the scanpy.pl.MatrixPlot directly.
+    Create a heatmap of the mean expression values per group of each var_names. This function provides a convenient interface to the MatrixPlot class with various parameters for customization.
     """
 
-    adata: Any = Field(
-        ...,
-        description="Annotated data matrix. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    var_names: Any = Field(
-        ...,
-        description="`var_names` should be a valid subset of `adata.var_names`. If `var_names` is a mapping, then the key is used as label to group the values. The mapping values should be sequences of valid `adata.var_names`. Original type annotation: _VarNames | Mapping[str, _VarNames]",
-        title="Var Names",
+    var_names: typing.Any = Field(
+        Ellipsis,
+        description="""`var_names` should be a valid subset of `adata.var_names`. If `var_names` is a mapping, then the key is used as a label to group the values with options for coloring or grouping using \'brackets\'.
+        Original annotation is _VarNames | Mapping[str, _VarNames]
+        """,
     )
-    groupby: Any = Field(
-        ...,
-        description="The key of the observation grouping to consider. Original type annotation: str | Sequence[str]",
-        title="Groupby",
+    groupby: str | Sequence[str] = Field(
+        Ellipsis,
+        description="""The key of the observation grouping to consider.
+        Original annotation is str | Sequence[str]
+        """,
     )
-    use_raw: Any = Field(
+    use_raw: bool | None = Field(
         None,
-        description="Use `raw` attribute of `adata` if present. Original type annotation: bool | None",
-        title="Use Raw",
+        description="""Use `raw` attribute of `adata` if present.
+        Original annotation is bool | None
+        """,
     )
-    log: Optional[Any] = Field(
+    log: bool = Field(
         False,
-        description="Plot on a logarithmic axis. Original type annotation: bool",
-        title="Log",
+        description="""Plot on logarithmic axis.
+        Original annotation is bool
+        """,
     )
-    num_categories: Optional[Any] = Field(
+    num_categories: int = Field(
         7,
-        description="Determines the number of groups into which the groupby observation should be subdivided. Original type annotation: int",
-        title="Num Categories",
+        description="""Determines the number of groups if groupby observation is not categorical.
+        Original annotation is int
+        """,
     )
-    categories_order: Any = Field(
+    categories_order: typing.Any = Field(
         None,
-        description="Order in which to show the categories. Note: add_dendrogram or add_totals can change the categories order. Original type annotation: Sequence[str] | None",
-        title="Categories Order",
+        description="""Order in which to show the categories with options to change based on dendrogram or totals.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    figsize: Any = Field(
-        None,
-        description="Figure size when `multi_panel=True`. Original type annotation: tuple[float, float] | None",
-        title="Figsize",
-    )
-    dendrogram: Optional[Any] = Field(
+    # figsize: tuple[float, float] | None = Field(
+    #     None,
+    #     description="""Figure size parameter for the plot.
+    #     Original annotation is tuple[float, float] | None
+    #     """,
+    # )
+    dendrogram: bool | str = Field(
         False,
-        description="If True or a valid dendrogram key, a dendrogram based on the hierarchical clustering between the `groupby` categories is added. Original type annotation: bool | str",
-        title="Dendrogram",
+        description="""Adds a dendrogram based on hierarchical clustering between groupby categories.
+        Original annotation is bool | str
+        """,
     )
-    title: Any = Field(
+    title: str | None = Field(
         None,
-        description="Title for the figure. Original type annotation: str | None",
-        title="Title",
+        description="""Title for the figure.
+        Original annotation is str | None
+        """,
     )
-    cmap: Optional[Any] = Field(
+    cmap: typing.Any = Field(
         "viridis",
-        description="String denoting matplotlib color map. Original type annotation: Colormap | str | None",
-        title="Cmap",
+        description="""String representing the matplotlib color map.
+        Original annotation is Colormap | str | None
+        """,
     )
-    colorbar_title: Optional[Any] = Field(
-        "Mean expression\nin group",
-        description="Title for the color bar. New line character (\\n) can be used. Original type annotation: str | None",
-        title="Colorbar Title",
+    colorbar_title: str | None = Field(
+        "Mean expression in group",
+        description="""Title for the color bar with support for newline character.
+        Original annotation is str | None
+        """,
     )
-    gene_symbols: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols. Original type annotation: str | None",
-        title="Gene Symbols",
+        description="""Column name in `.var` DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    var_group_positions: Any = Field(
+    # var_group_positions: Sequence[tuple[int, int]] | None = Field(
+    #     None,
+    #     description="""Highlight groups of `var_names` with brackets or color blocks between given positions.
+    #     Original annotation is Sequence[tuple[int, int]] | None
+    #     """,
+    # )
+    var_group_labels: typing.Any = Field(
         None,
-        description="Use this parameter to highlight groups of `var_names`. Original type annotation: Sequence[tuple[int, int]] | None",
-        title="Var Group Positions",
+        description="""Labels for each of the `var_group_positions`.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    var_group_labels: Any = Field(
+    var_group_rotation: float | None = Field(
         None,
-        description="Labels for each of the `var_group_positions` that want to be highlighted. Original type annotation: Sequence[str] | None",
-        title="Var Group Labels",
+        description="""Label rotation degrees.
+        Original annotation is float | None
+        """,
     )
-    var_group_rotation: Any = Field(
+    layer: str | None = Field(
         None,
-        description="Label rotation degrees. Original type annotation: float | None",
-        title="Var Group Rotation",
+        description="""Name of the AnnData object layer to be plotted.
+        Original annotation is str | None
+        """,
     )
-    layer: Any = Field(
+    standard_scale: typing.Any = Field(
         None,
-        description="Name of the AnnData object layer that wants to be plotted. Original type annotation: str | None",
-        title="Layer",
+        description="""Standardize dimension values between 0 and 1.
+        Original annotation is Literal['var', 'group'] | None
+        """,
     )
-    standard_scale: Any = Field(
+    values_df: typing.Any = Field(
         None,
-        description="Whether or not to standardize the given dimension between 0 and 1. Original type annotation: Literal['var', 'group'] | None",
-        title="Standard Scale",
+        description="""No description available.
+        Original annotation is pd.DataFrame | None
+        """,
     )
-    values_df: Any = Field(
-        None,
-        description="No description available. Original type annotation: pd.DataFrame | None",
-        title="Values Df",
-    )
-    swap_axes: Optional[Any] = Field(
+    swap_axes: bool = Field(
         False,
-        description="By setting `swap_axes` then x are the `groupby` categories and y the `var_names`. Original type annotation: bool",
-        title="Swap Axes",
+        description="""Swap x and y axes for plotting.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Show the plot, do not return axis. Original type annotation: bool | None",
-        title="Show",
+        description="""Show the plot without returning axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: str | bool | None = Field(
+        True,
+        description="""Save the figure with options for file type.
+        Original annotation is str | bool | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="If `True` or a `str`, save the figure. Original type annotation: str | bool | None",
-        title="Save",
+        description="""Matplotlib axes object for plotting a single component.
+        Original annotation is _AxesSubplot | None
+        """,
     )
-    ax: Any = Field(
-        None,
-        description="A matplotlib axes object. Original type annotation: _AxesSubplot | None",
-        title="Ax",
-    )
-    return_fig: Optional[Any] = Field(
+    return_fig: bool | None = Field(
         False,
-        description="Returns :class:`DotPlot` object. Original type annotation: bool | None",
-        title="Return Fig",
+        description="""Returns a DotPlot object for fine-tuning the plot.
+        Original annotation is bool | None
+        """,
     )
-    vmin: Any = Field(
+    vmin: float | None = Field(
         None,
-        description="The value representing the lower limit of the color scale. Original type annotation: float | None",
-        title="Vmin",
+        description="""Lower limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    vmax: Any = Field(
+    vmax: float | None = Field(
         None,
-        description="The value representing the upper limit of the color scale. Original type annotation: float | None",
-        title="Vmax",
+        description="""Upper limit of the color scale.
+        Original annotation is float | None
+        """,
     )
-    vcenter: Any = Field(
+    vcenter: float | None = Field(
         None,
-        description="The value representing the center of the color scale. Original type annotation: float | None",
-        title="Vcenter",
+        description="""Center of the color scale for diverging colormaps.
+        Original annotation is float | None
+        """,
     )
-    norm: Any = Field(
+    norm: typing.Any = Field(
         None,
-        description="Custom color normalization object from matplotlib. Original type annotation: Normalize | None",
-        title="Norm",
+        description="""Custom color normalization object from matplotlib.
+        Original annotation is Normalize | None
+        """,
     )
-    kwds: Any = Field(
-        ..., description="Are passed to :func:`matplotlib.pyplot.pcolor`.", title="Kwds"
+    kwds: typing.Any = Field(
+        Ellipsis,
+        description="""Parameters passed to matplotlib.pyplot.pcolor.
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.matrixplot")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -2624,43 +3515,50 @@ class ScPlMatrixplot(BaseAPI):
 
 class ScPlScrubletScoreDistribution(BaseAPI):
     """
-    Plot histogram of doublet scores for observed transcriptomes and simulated doublets. The histogram for simulated doublets is useful for determining the correct doublet score threshold. Scrublet must have been run previously with the input object.
+    Plot histogram of doublet scores for observed transcriptomes and simulated doublets. The function requires the previous execution of Scrublet with the input object.
     """
 
-    adata: Any = Field(
-        ...,
-        description="An AnnData object resulting from :func:`~scanpy.pp.scrublet`. Original type annotation: AnnData",
-        title="Adata",
+    adata: str = Field(
+        "data",
+        description="""An AnnData object resulting from the scrublet function.
+        """,
     )
-    scale_hist_obs: Optional[Any] = Field(
+    scale_hist_obs: typing.Any = Field(
         "log",
-        description="Set y axis scale transformation in matplotlib for the plot of observed transcriptomes. Original type annotation: Scale",
-        title="Scale Hist Obs",
+        description="""Set y axis scale transformation in matplotlib for the plot of observed transcriptomes.
+        Original annotation is Scale
+        """,
     )
-    scale_hist_sim: Optional[Any] = Field(
+    scale_hist_sim: typing.Any = Field(
         "linear",
-        description="Set y axis scale transformation in matplotlib for the plot of simulated doublets. Original type annotation: Scale",
-        title="Scale Hist Sim",
+        description="""Set y axis scale transformation in matplotlib for the plot of simulated doublets.
+        Original annotation is Scale
+        """,
     )
-    figsize: Optional[Any] = Field(
-        [8, 3],
-        description="Width, height. Original type annotation: tuple[float | int, float | int]",
-        title="Figsize",
-    )
-    return_fig: Optional[Any] = Field(
+    # figsize: tuple[float | int, float | int] = Field(
+    #     (8, 3),
+    #     description="""Specifies the width and height of the figure.
+    #     Original annotation is tuple[float | int, float | int]
+    #     """,
+    # )
+    return_fig: bool = Field(
         False,
-        description="No description available. Original type annotation: bool",
-        title="Return Fig",
+        description="""No further description available for this parameter.
+        Original annotation is bool
+        """,
     )
-    show: Optional[Any] = Field(
+    show: bool = Field(
         True,
-        description="Show the plot, do not return axis. Original type annotation: bool",
-        title="Show",
+        description="""Displays the plot without returning axis.
+        Original annotation is bool
+        """,
     )
-    save: Any = Field(
-        None,
-        description="If :data:`True` or a :class:`str`, save the figure. A string is appended to the default filename. Infer the filetype if ending on {`'.pdf'`, `'.png'`, `'.svg'`}. Original type annotation: str | bool | None",
-        title="Save",
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""If True or a string, saves the figure with a filename extension to infer the filetype.
+        Original annotation is str | bool | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.scrublet_score_distribution")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -2669,32 +3567,44 @@ class ScPlScrubletScoreDistribution(BaseAPI):
 
 class ScPlPcaLoadings(BaseAPI):
     """
-    Rank genes according to contributions to PCs.
+    Rank genes according to contributions to PCs. Parameters: adata - Annotated data matrix, components - For example, \'1,2,3\' means [1, 2, 3], first, second, third principal component, include_lowest - Whether to show the variables with both highest and lowest loadings, show - Show the plot, do not return axis, n_points - Number of variables to plot for each component, save - If True or a str, save the figure. A string is appended to the default filename. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    components: Any = Field(
-        None,
-        description="For example, '1,2,3' means [1, 2, 3], first, second, third principal component.",
-        title="Components",
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
     )
-    include_lowest: Optional[Any] = Field(
+    components: typing.Any = Field(
+        None,
+        description="""For example, \'1,2,3\' means [1, 2, 3], first, second, third principal component.
+        Original annotation is str | Sequence[int] | None
+        """,
+    )
+    include_lowest: bool = Field(
         True,
-        description="Whether to show the variables with both highest and lowest loadings.",
-        title="Include Lowest",
+        description="""Whether to show the variables with both highest and lowest loadings.
+        Original annotation is bool
+        """,
     )
-    n_points: Any = Field(
+    n_points: int | None = Field(
         None,
-        description="Number of variables to plot for each component.",
-        title="N Points",
+        description="""Number of variables to plot for each component.
+        Original annotation is int | None
+        """,
     )
-    show: Any = Field(
-        None, description="Show the plot, do not return axis.", title="Show"
-    )
-    save: Any = Field(
+    show: bool | None = Field(
         None,
-        description="If True or a str, save the figure. A string is appended to the default filename. Infer the filetype if ending on {'.pdf', '.png', '.svg'}.",
-        title="Save",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
+    )
+    save: str | bool | None = Field(
+        # None,
+        True,
+        description="""If True or a str, save the figure. A string is appended to the default filename. Infer the filetype if ending on {\'.pdf\', \'.png\', \'.svg\'}.
+        Original annotation is str | bool | None
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.pca_loadings")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -2706,176 +3616,289 @@ class ScPlDrawGraph(BaseAPI):
     Scatter plot in graph-drawing basis.
     """
 
-    adata: Any = Field(..., description="Annotated data matrix.", title="Adata")
-    color: Any = Field(
+    adata: str = Field(
+        "data",
+        description="""Annotated data matrix.
+        """,
+    )
+    color: typing.Any = Field(
         None,
-        description="Keys for annotations of observations/cells or variables/genes.",
-        title="Color",
+        description="""Keys for annotations of observations/cells or variables/genes.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
     )
-    mask_obs: Any = Field(
-        None, description="No description available.", title="Mask Obs"
-    )
-    gene_symbols: Any = Field(
+    mask_obs: typing.Any = Field(
         None,
-        description="Column name in `.var` DataFrame that stores gene symbols.",
-        title="Gene Symbols",
+        description="""No description available.
+        Original annotation is numpy.ndarray[tuple[int, ...], numpy.dtype[numpy.bool]] | str | None
+        """,
     )
-    use_raw: Any = Field(
+    gene_symbols: str | None = Field(
         None,
-        description="Use `.raw` attribute of `adata` for coloring with gene expression.",
-        title="Use Raw",
+        description="""Column name in .var DataFrame that stores gene symbols.
+        Original annotation is str | None
+        """,
     )
-    sort_order: Optional[Any] = Field(
+    use_raw: bool | None = Field(
+        None,
+        description="""Use .raw attribute of adata for coloring with gene expression.
+        Original annotation is bool | None
+        """,
+    )
+    sort_order: typing.Any = Field(
         True,
-        description="For continuous annotations used as color parameter, plot data points with higher values on top of others.",
-        title="Sort Order",
+        description="""For continuous annotations, higher values on top of others.
+        Original annotation is <class 'bool'>
+        """,
     )
-    edges: Optional[Any] = Field(False, description="Show edges.", title="Edges")
-    edges_width: Optional[Any] = Field(
-        0.1, description="Width of edges.", title="Edges Width"
-    )
-    edges_color: Optional[Any] = Field(
-        "grey", description="Color of edges.", title="Edges Color"
-    )
-    neighbors_key: Any = Field(
-        None,
-        description="Where to look for neighbors connectivities.",
-        title="Neighbors Key",
-    )
-    arrows: Optional[Any] = Field(False, description="Show arrows.", title="Arrows")
-    arrows_kwds: Any = Field(
-        None,
-        description="Passed to :meth:`~matplotlib.axes.Axes.quiver`.",
-        title="Arrows Kwds",
-    )
-    groups: Any = Field(
-        None,
-        description="Restrict to a few categories in categorical observation annotation.",
-        title="Groups",
-    )
-    components: Any = Field(None, description="Components to plot.", title="Components")
-    dimensions: Any = Field(
-        None,
-        description="0-indexed dimensions of the embedding to plot as integers.",
-        title="Dimensions",
-    )
-    layer: Any = Field(
-        None,
-        description="Name of the AnnData object layer that wants to be plotted.",
-        title="Layer",
-    )
-    projection: Optional[Any] = Field(
-        "2d", description="Projection of plot.", title="Projection"
-    )
-    scale_factor: Any = Field(
-        None, description="No description available.", title="Scale Factor"
-    )
-    color_map: Any = Field(
-        None, description="Color map to use for continous variables.", title="Color Map"
-    )
-    cmap: Any = Field(None, description="No description available.", title="Cmap")
-    palette: Any = Field(
-        None,
-        description="Colors to use for plotting categorical annotation groups.",
-        title="Palette",
-    )
-    na_color: Optional[Any] = Field(
-        "lightgray",
-        description="Color to use for null or masked values.",
-        title="Na Color",
-    )
-    na_in_legend: Optional[Any] = Field(
-        True,
-        description="If there are missing values, whether they get an entry in the legend.",
-        title="Na In Legend",
-    )
-    size: Any = Field(None, description="Point size.", title="Size")
-    frameon: Any = Field(
-        None, description="Draw a frame around the scatter plot.", title="Frameon"
-    )
-    legend_fontsize: Any = Field(
-        None,
-        description="Numeric size in pt or string describing the size.",
-        title="Legend Fontsize",
-    )
-    legend_fontweight: Optional[Any] = Field(
-        "bold", description="Legend font weight.", title="Legend Fontweight"
-    )
-    legend_loc: Optional[Any] = Field(
-        "right margin", description="Location of legend.", title="Legend Loc"
-    )
-    legend_fontoutline: Any = Field(
-        None,
-        description="Line width of the legend font outline in pt.",
-        title="Legend Fontoutline",
-    )
-    colorbar_loc: Optional[Any] = Field(
-        "right",
-        description="Where to place the colorbar for continous variables.",
-        title="Colorbar Loc",
-    )
-    vmax: Any = Field(
-        None,
-        description="The value representing the upper limit of the color scale.",
-        title="Vmax",
-    )
-    vmin: Any = Field(
-        None,
-        description="The value representing the lower limit of the color scale.",
-        title="Vmin",
-    )
-    vcenter: Any = Field(
-        None,
-        description="The value representing the center of the color scale.",
-        title="Vcenter",
-    )
-    norm: Any = Field(None, description="No description available.", title="Norm")
-    add_outline: Optional[Any] = Field(
+    edges: typing.Any = Field(
         False,
-        description="If set to True, this will add a thin border around groups of dots.",
-        title="Add Outline",
+        description="""Show edges.
+        Original annotation is <class 'bool'>
+        """,
     )
-    outline_width: Optional[Any] = Field(
-        [0.3, 0.05],
-        description="Width numbers used to adjust the outline.",
-        title="Outline Width",
+    edges_width: typing.Any = Field(
+        0.1,
+        description="""Width of edges.
+        Original annotation is <class 'float'>
+        """,
     )
-    outline_color: Optional[Any] = Field(
-        ["black", "white"],
-        description="Valid color names used to adjust the add_outline.",
-        title="Outline Color",
+    edges_color: (
+        str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+    ) = Field(
+        "grey",
+        description="""Color of edges.
+        Original annotation is str | collections.abc.Sequence[float] | collections.abc.Sequence[str]
+        """,
     )
-    ncols: Optional[Any] = Field(
-        4, description="Number of panels per row.", title="Ncols"
+    neighbors_key: str | None = Field(
+        None,
+        description="""Where to look for neighbors connectivities.
+        Original annotation is str | None
+        """,
     )
-    hspace: Optional[Any] = Field(
+    arrows: typing.Any = Field(
+        False,
+        description="""Show arrows (deprecated).
+        Original annotation is <class 'bool'>
+        """,
+    )
+    arrows_kwds: typing.Any = Field(
+        None,
+        description="""Passed to matplotlib.axes.Axes.quiver.
+        Original annotation is collections.abc.Mapping[str, typing.Any] | None
+        """,
+    )
+    groups: typing.Any = Field(
+        None,
+        description="""Restrict to a few categories in categorical observation annotation.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    components: typing.Any = Field(
+        None,
+        description="""To plot components.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    dimensions: typing.Any = Field(
+        None,
+        description="""0-indexed dimensions to plot as integers.
+        Original annotation is tuple[int, int] | collections.abc.Sequence[tuple[int, int]] | None
+        """,
+    )
+    layer: str | None = Field(
+        None,
+        description="""Name of the AnnData object layer to plot.
+        Original annotation is str | None
+        """,
+    )
+    projection: typing.Any = Field(
+        "2d",
+        description="""Projection of plot.
+        Original annotation is typing.Literal['2d', '3d']
+        """,
+    )
+    scale_factor: float | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is float | None
+        """,
+    )
+    color_map: typing.Any = Field(
+        None,
+        description="""Color map to use for continuous variables.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    cmap: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Colormap | str | None
+        """,
+    )
+    palette: typing.Any = Field(
+        None,
+        description="""Colors to use for plotting categorical annotation groups.
+        Original annotation is str | collections.abc.Sequence[str] | cycler.Cycler | None
+        """,
+    )
+    na_color: str | tuple[float, ...] = Field(
+        "lightgray",
+        description="""Color to use for null or masked values.
+        Original annotation is str | tuple[float, ...]
+        """,
+    )
+    na_in_legend: typing.Any = Field(
+        True,
+        description="""If missing values get an entry in the legend.
+        Original annotation is <class 'bool'>
+        """,
+    )
+    size: typing.Any = Field(
+        None,
+        description="""Point size.
+        Original annotation is float | collections.abc.Sequence[float] | None
+        """,
+    )
+    frameon: bool | None = Field(
+        None,
+        description="""Draw a frame around the scatter plot.
+        Original annotation is bool | None
+        """,
+    )
+    legend_fontsize: typing.Any = Field(
+        None,
+        description="""Numeric size in pt or string.
+        Original annotation is typing.Union[float, typing.Literal['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'], NoneType]
+        """,
+    )
+    legend_fontweight: typing.Any = Field(
+        "bold",
+        description="""Legend font weight.
+        Original annotation is typing.Union[int, typing.Literal['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']]
+        """,
+    )
+    legend_loc: typing.Any = Field(
+        "right margin",
+        description="""Location of legend.
+        Original annotation is typing.Optional[typing.Literal['none', 'right margin', 'on data', 'on data export', 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 'center left', 'center right', 'lower center', 'upper center', 'center']]
+        """,
+    )
+    legend_fontoutline: int | None = Field(
+        None,
+        description="""Line width of the legend font outline.
+        Original annotation is int | None
+        """,
+    )
+    colorbar_loc: str | None = Field(
+        "right",
+        description="""Where to place the colorbar.
+        Original annotation is str | None
+        """,
+    )
+    vmax: typing.Any = Field(
+        None,
+        description="""The upper limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    vmin: typing.Any = Field(
+        None,
+        description="""The lower limit of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    vcenter: typing.Any = Field(
+        None,
+        description="""The center of the color scale.
+        Original annotation is str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float] | collections.abc.Sequence[str | float | collections.abc.Callable[[collections.abc.Sequence[float]], float]] | None
+        """,
+    )
+    norm: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is matplotlib.colors.Normalize | collections.abc.Sequence[matplotlib.colors.Normalize] | None
+        """,
+    )
+    add_outline: bool | None = Field(
+        False,
+        description="""Add a thin border around groups of dots.
+        Original annotation is bool | None
+        """,
+    )
+    # outline_width: tuple[float, float] = Field(
+    #     (0.3, 0.05),
+    #     description="""Width of the border and gap color.
+    #     Original annotation is tuple[float, float]
+    #     """,
+    # )
+    # outline_color: tuple[str, str] = Field(
+    #     ("black", "white"),
+    #     description="""Colors used to adjust the add_outline.
+    #     Original annotation is tuple[str, str]
+    #     """,
+    # )
+    ncols: typing.Any = Field(
+        4,
+        description="""Number of panels per row.
+        Original annotation is <class 'int'>
+        """,
+    )
+    hspace: typing.Any = Field(
         0.25,
-        description="Adjust the height of the space between multiple panels.",
-        title="Hspace",
+        description="""Adjust the height of the space between multiple panels.
+        Original annotation is <class 'float'>
+        """,
     )
-    wspace: Any = Field(
+    wspace: float | None = Field(
         None,
-        description="Adjust the width of the space between multiple panels.",
-        title="Wspace",
+        description="""Adjust the width of the space between multiple panels.
+        Original annotation is float | None
+        """,
     )
-    title: Any = Field(None, description="Provide title for panels.", title="Title")
-    show: Any = Field(
-        None, description="Show the plot, do not return axis.", title="Show"
-    )
-    save: Any = Field(
-        None, description="If `True` or a `str`, save the figure.", title="Save"
-    )
-    ax: Any = Field(None, description="A matplotlib axes object.", title="Ax")
-    return_fig: Any = Field(
-        None, description="Return the matplotlib figure.", title="Return Fig"
-    )
-    marker: Optional[Any] = Field(
-        ".", description="No description available.", title="Marker"
-    )
-    layout: Any = Field(
+    title: typing.Any = Field(
         None,
-        description="One of the :func:`~scanpy.tl.draw_graph` layouts.",
-        title="Layout",
+        description="""Provide title for panels.
+        Original annotation is str | collections.abc.Sequence[str] | None
+        """,
+    )
+    show: bool | None = Field(
+        None,
+        description="""Show the plot.
+        Original annotation is bool | None
+        """,
+    )
+    save: bool | str | None = Field(
+        # None,
+        True,
+        description="""Save the figure.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
+        None,
+        description="""A matplotlib axes object.
+        Original annotation is matplotlib.axes._axes.Axes | None
+        """,
+    )
+    return_fig: bool | None = Field(
+        None,
+        description="""Return the matplotlib figure.
+        Original annotation is bool | None
+        """,
+    )
+    marker: typing.Any = Field(
+        ".",
+        description="""No description available.
+        Original annotation is str | collections.abc.Sequence[str]
+        """,
+    )
+    layout: typing.Any = Field(
+        None,
+        description="""One of the scanpy.tl.draw_graph layouts.
+        Original annotation is typing.Optional[typing.Literal['fr', 'drl', 'kk', 'grid_fr', 'lgl', 'rt', 'rt_circular', 'fa']]
+        """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.draw_graph")
     _products_original: list[str] = PrivateAttr(default=[])
@@ -2887,114 +3910,160 @@ class ScPlPagaPath(BaseAPI):
     Gene expression and annotation changes along paths in the abstracted graph.
     """
 
-    adata: Any = Field(
-        ..., description="An annotated data matrix representing AnnData.", title="Adata"
+    adata: str = Field(
+        "data",
+        description="""An annotated data matrix.
+        """,
     )
-    nodes: Any = Field(
-        ...,
-        description="A path through nodes of the abstracted graph, using names or indices of groups that were used in PAGA analysis.",
-        title="Nodes",
+    nodes: Sequence[str | int] = Field(
+        Ellipsis,
+        description="""A path through nodes of the abstracted graph, names or indices of groups used in PAGA.
+        Original annotation is Sequence[str | int]
+        """,
     )
-    keys: Any = Field(
-        ...,
-        description="Variables in adata.var_names or annotations in adata.obs to be plotted using the specified color_map.",
-        title="Keys",
+    keys: typing.Any = Field(
+        Ellipsis,
+        description="""Variables in adata.var_names or annotations in adata.obs, plotted using color_map.
+        Original annotation is Sequence[str]
+        """,
     )
-    use_raw: Optional[Any] = Field(
+    use_raw: bool = Field(
         True,
-        description="Boolean indicating whether to use adata.raw for retrieving gene expressions if set.",
-        title="Use Raw",
+        description="""Retrieve gene expressions using adata.raw if set.
+        Original annotation is bool
+        """,
     )
-    annotations: Optional[Any] = Field(
-        ["dpt_pseudotime"],
-        description="Keys to plot with color_maps_annotations, must be keys for adata.obs.",
-        title="Annotations",
+    annotations: typing.Any = Field(
+        ("dpt_pseudotime",),
+        description="""Plot keys with color_maps_annotations, must be keys for adata.obs.
+        Original annotation is Sequence[str]
+        """,
     )
-    color_map: Any = Field(
+    color_map: typing.Any = Field(
         None,
-        description="Matplotlib colormap as a string or Colormap object.",
-        title="Color Map",
+        description="""Matplotlib colormap.
+        Original annotation is str | Colormap | None
+        """,
     )
-    color_maps_annotations: Optional[Any] = Field(
-        {"dpt_pseudotime": "Greys"},
-        description="Color maps for plotting annotations, keys must match annotations in a mapping structure.",
-        title="Color Maps Annotations",
+    color_maps_annotations: typing.Any = Field(
+        "{'dpt_pseudotime': 'Greys'}",
+        description="""Color maps for plotting annotations, keys must match annotations.
+        Original annotation is Mapping[str, str | Colormap]
+        """,
     )
-    palette_groups: Any = Field(
+    palette_groups: typing.Any = Field(
         None,
-        description="Palette groups to be used for coloring the abstracted graph.",
-        title="Palette Groups",
+        description="""Usually use the same palettes as used for coloring the abstracted graph.
+        Original annotation is Sequence[str] | None
+        """,
     )
-    n_avg: Optional[Any] = Field(
+    n_avg: int = Field(
         1,
-        description="Number of data points to include in the computation of running average.",
-        title="N Avg",
+        description="""Number of data points for computing running average.
+        Original annotation is int
+        """,
     )
-    groups_key: Any = Field(
+    groups_key: str | None = Field(
         None,
-        description="Key of the grouping used in PAGA analysis, defaults to adata.uns['paga']['groups'] if None.",
-        title="Groups Key",
+        description="""Grouping key used for PAGA, defaults to adata.uns[\'paga\'][\'groups\'] if None.
+        Original annotation is str | None
+        """,
     )
-    xlim: Optional[Any] = Field(
-        [None, None], description="Tuple representing the x-axis limits.", title="Xlim"
+    # xlim: tuple[int | None, int | None] = Field(
+    #     (None, None),
+    #     description="""No description available.
+    #     Original annotation is tuple[int | None, int | None]
+    #     """,
+    # )
+    title: str | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is str | None
+        """,
     )
-    title: Any = Field(None, description="Title of the plot.", title="Title")
-    left_margin: Any = Field(
-        None, description="Left margin of the plot.", title="Left Margin"
+    left_margin: typing.Any = Field(
+        None,
+        description="""No description available.
+        """,
     )
-    ytick_fontsize: Any = Field(
-        None, description="Font size for y-axis ticks.", title="Ytick Fontsize"
+    ytick_fontsize: int | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is int | None
+        """,
     )
-    title_fontsize: Any = Field(
-        None, description="Font size for the plot title.", title="Title Fontsize"
+    title_fontsize: int | None = Field(
+        None,
+        description="""No description available.
+        Original annotation is int | None
+        """,
     )
-    show_node_names: Optional[Any] = Field(
+    show_node_names: bool = Field(
         True,
-        description="Boolean indicating whether to plot node names on the nodes bar.",
-        title="Show Node Names",
+        description="""Plot node names on nodes bar.
+        Original annotation is bool
+        """,
     )
-    show_yticks: Optional[Any] = Field(
+    show_yticks: bool = Field(
         True,
-        description="Boolean indicating whether to show the y-axis ticks.",
-        title="Show Yticks",
+        description="""Show y ticks.
+        Original annotation is bool
+        """,
     )
-    show_colorbar: Optional[Any] = Field(
+    show_colorbar: bool = Field(
         True,
-        description="Boolean indicating whether to show the colorbar.",
-        title="Show Colorbar",
+        description="""Show the colorbar.
+        Original annotation is bool
+        """,
     )
-    legend_fontsize: Any = Field(
-        None, description="Font size for the legend.", title="Legend Fontsize"
+    legend_fontsize: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is float | _FontSize | None
+        """,
     )
-    legend_fontweight: Any = Field(
-        None, description="Font weight for the legend.", title="Legend Fontweight"
+    legend_fontweight: typing.Any = Field(
+        None,
+        description="""No description available.
+        Original annotation is int | _FontWeight | None
+        """,
     )
-    normalize_to_zero_one: Optional[Any] = Field(
+    normalize_to_zero_one: bool = Field(
         False,
-        description="Boolean indicating whether to shift and scale the running average to [0, 1] per gene.",
-        title="Normalize To Zero One",
+        description="""Shift and scale running average to [0, 1] per gene.
+        Original annotation is bool
+        """,
     )
-    as_heatmap: Optional[Any] = Field(
+    as_heatmap: bool = Field(
         True,
-        description="Boolean indicating whether to plot the timeseries as a heatmap.",
-        title="As Heatmap",
+        description="""Plot timeseries as heatmap, annotations have no effect if not plotting as heatmap.
+        Original annotation is bool
+        """,
     )
-    return_data: Optional[Any] = Field(
+    return_data: bool = Field(
         False,
-        description="Boolean indicating whether to return the timeseries data in addition to the axes.",
-        title="Return Data",
+        description="""Return timeseries data in addition to axes if True.
+        Original annotation is bool
+        """,
     )
-    show: Any = Field(
+    show: bool | None = Field(
         None,
-        description="Boolean indicating whether to show the plot or not.",
-        title="Show",
+        description="""Show the plot, do not return axis.
+        Original annotation is bool | None
+        """,
     )
-    save: Any = Field(
+    save: bool | str | None = Field(
+        True,
+        description="""Save the figure if True or a string, infer filetype from filename extension.
+        Original annotation is bool | str | None
+        """,
+    )
+    ax: typing.Any = Field(
         None,
-        description="Boolean or string indicating whether to save the figure with an appended filename.",
-        title="Save",
+        description="""A matplotlib axes object.
+        Original annotation is Axes | None
+        """,
     )
-    ax: Any = Field(None, description="A matplotlib axes object or None.", title="Ax")
     _api_name: str = PrivateAttr(default="sc.pl.paga_path")
     _products_original: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
