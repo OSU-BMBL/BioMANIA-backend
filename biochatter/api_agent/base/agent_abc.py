@@ -463,6 +463,8 @@ class BaseAPI(BaseObject):
     # _deps.keys_info in created in forward pass.
     _products: BaseData = PrivateAttr(default=BaseData())
     _deps: BaseData = PrivateAttr(default=BaseData())
+    _results: BaseData = PrivateAttr(default=BaseData())
+    _api_calling: str = PrivateAttr(default="")
     
 
     def _hash_members(self):
@@ -494,15 +496,14 @@ class BaseAPI(BaseObject):
             raise ValueError(error)
         else:
             self._products.data = state["data"]
-            return results, api_calling
+            self._results.data = results
+            self._api_calling = api_calling
         
     def post_parametrise(self):
         """Post parametrise the API.
         
         Assuming the API is instantiated and parametrised, this method is to complete the API
         with other information, such as _products.keys_info.
-
-        Jiahang (TODO): not employed yet.
         """
         self._products = BaseData(
             keys_info=_str_list_to_keys_info(self._products_original)
