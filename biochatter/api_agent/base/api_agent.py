@@ -54,8 +54,12 @@ class APIAgent:
         self.fetcher = fetcher
         self.interpreter = interpreter
         self.final_answer = None
+        self.data = None
 
-    def execute(self, question: str, data: Any | None = None) -> str | None:
+    def set_data(self, data: Any) -> None:
+        self.data = data
+
+    def execute(self, question: str) -> str | None:
         """Wrapper that uses class methods to execute the API agent logic. Consists
         of 1) query generation, 2) query submission, 3) results fetching, and
         4) answer extraction. The final answer is stored in the final_answer
@@ -70,7 +74,7 @@ class APIAgent:
         query_models: list[BaseModel] = self.query_builder.build_api_query(question)
 
         # Fetch results
-        response: object = self.fetcher.fetch_results(query_models, data, 100)
+        response: object = self.fetcher.fetch_results(query_models, self.data, 100)
         
         # Extract answer from results
         final_answer = self.interpreter.summarise_results(

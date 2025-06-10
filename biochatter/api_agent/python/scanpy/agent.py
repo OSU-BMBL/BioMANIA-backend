@@ -139,7 +139,7 @@ class ScanpyFetcher(BaseFetcher):
                 execution_graph.update_dep(out_dep)
             code_lines.append(api._api_calling)
         print('\n'.join(code_lines)) # Jiahang (TODO): using logger to do the printing.
-        return api._results.data
+        return code_lines
     
 class ScanpyInterpreter(BaseInterpreter):
     def summarise_results(

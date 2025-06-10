@@ -35,6 +35,13 @@ interpreter_conv = GptConversation(
     }
 )
 
+query_builder_conv.set_api_key(
+    os.environ.get("OPENAI_API_KEY")
+)
+interpreter_conv.set_api_key(
+    os.environ.get("OPENAI_API_KEY")
+)
+
 scanpy_agent = APIAgent(
     query_builder=ScanpyQueryBuilder(
         conversation=query_builder_conv,
@@ -54,7 +61,9 @@ question = "visualize the t-SNE plot of the cells"
 # question = "visualize the t-SNE plot of the cells, where cells are colored by the louvain clustering label."
 data = krumsiek11()
 # data = pbmc3k()
-scanpy_agent.execute(question, data=data)
+scanpy_agent.set_data(data)
+code_lines = scanpy_agent.execute(question)
+print('\n'.join(code_lines))
 
 pass
 

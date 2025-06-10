@@ -1509,6 +1509,8 @@ class GptConversation(Conversation):
             if user == "community":
                 self.usage_stats = get_stats(user=user)
 
+            # Jiahang (TODO, high priority): this is not a good practice to test openai connection.
+            # we should do it more robustly.
             self.chat.generate([[HumanMessage(content="Hello")]])
             return True
 
