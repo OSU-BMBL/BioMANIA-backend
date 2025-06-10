@@ -20,9 +20,8 @@ system_prompt = """
 You are a professional bioinformatician. 
 1. You have access to the data object named `data`.
 2. Please only use the provided tools. Do not use any tools that are not provided.
-3. When predicting arguments, please only predict the arguments that are required by the user query. If an argument is not relevant to user query, please leave it as default and do not predict it.
 """
-# Create an API agent for OncoKB
+# Create an API agent
 query_builder_conv = GptConversation(
     model_name=os.environ.get("MODEL"), 
     prompts={
@@ -47,8 +46,12 @@ scanpy_agent = APIAgent(
 )
 
 # Execute a query
+# correct
 question = "visualize the t-SNE plot of the cells"
+# sc.tl.tsne, key_added = "tsne", incorrect
 # question = "visualize the t-SNE plot of the cells, where cells are colored by the louvain clustering."
+# sc.pl.tsne, color = 'louvain', incorrect
+# question = "visualize the t-SNE plot of the cells, where cells are colored by the louvain clustering label."
 data = krumsiek11()
 # data = pbmc3k()
 scanpy_agent.execute(question, data=data)
