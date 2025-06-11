@@ -46,7 +46,7 @@ class ScTlPaga(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.paga")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.uns["paga"]["connectivities"]',
             'data.uns["paga"]["connectivities_tree"]',
@@ -149,7 +149,7 @@ class ScTlLeiden(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.leiden")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obs["leiden"]', 'data.uns["leiden"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -244,7 +244,7 @@ class ScTlLouvain(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.louvain")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obs["louvain"]', 'data.uns["louvain"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -351,7 +351,7 @@ class ScTlUmap(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.umap")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obsm["X_umap"]', 'data.uns["umap"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -442,7 +442,7 @@ class ScTlTsne(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.tsne")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obsm["X_tsne"]', 'data.uns["tsne"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -483,7 +483,7 @@ class ScTlDiffmap(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.diffmap")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obsm["X_diffmap"]', 'data.uns["diffmap_evals"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -524,7 +524,7 @@ class ScTlEmbeddingDensity(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.embedding_density")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obs["umap_density"]', 'data.uns["umap_density_params"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -632,7 +632,7 @@ class ScTlRankGenesGroups(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.rank_genes_groups")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.uns["rank_genes_groups"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -697,7 +697,7 @@ class ScTlFilterRankGenesGroups(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.filter_rank_genes_groups")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.uns["rank_genes_groups"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -762,7 +762,7 @@ class ScTlMarkerGeneOverlap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.marker_gene_overlap")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.uns["marker_gene_overlap"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -839,7 +839,7 @@ class ScTlScoreGenes(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.score_genes")
-    _products_original: list[str] = PrivateAttr(default=['data.obs["score"]'])
+    _products_str_repr: list[str] = PrivateAttr(default=['data.obs["score"]'])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -872,7 +872,7 @@ class ScTlScoreGenesCellCycle(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.tl.score_genes_cell_cycle")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.obs["S_score"]', 'data.obs["G2M_score"]', 'data.obs["phase"]']
     )
     _data_name: str = PrivateAttr(default="adata")
@@ -954,7 +954,7 @@ class ScTlDrawGraph(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.tl.draw_graph")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=['data.uns["draw_graph"]', 'data.obsm["X_draw_graph_fa"]']
     )
     _data_name: str = PrivateAttr(default="adata")

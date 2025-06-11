@@ -101,7 +101,7 @@ class ScPpNeighbors(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.neighbors")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.uns["neighbors"]',
             'data.obsp["distances"]',
@@ -162,7 +162,7 @@ class ScPpLogP(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.log1p")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="data")
 
 
@@ -255,7 +255,7 @@ class ScPpHighlyVariableGenes(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.highly_variable_genes")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.var["highly_variable"]',
             'data.var["means"]',
@@ -360,7 +360,7 @@ class ScPpPca(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.pca")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.obsm["X_pca"]',
             'data.varm["PCs"]',
@@ -436,7 +436,7 @@ class ScPpCalculateQcMetrics(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.calculate_qc_metrics")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.obs["total_genes_by_counts"]',
             'data.obs["total_counts"]',
@@ -495,7 +495,7 @@ class ScPpFilterCells(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.filter_cells")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=["data.X", 'data.obs["n_counts"]', 'data.obs["n_genes"]']
     )
     _data_name: str = PrivateAttr(default="data")
@@ -548,7 +548,7 @@ class ScPpFilterGenes(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.filter_genes")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=["data.X", 'data.var["n_counts"]', 'data.var["n_genes"]']
     )
     _data_name: str = PrivateAttr(default="data")
@@ -607,7 +607,7 @@ class ScPpNormalizeTotal(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.normalize_total")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -646,7 +646,7 @@ class ScPpRegressOut(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.regress_out")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -697,7 +697,7 @@ class ScPpScale(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.scale")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=["data.X", 'data.var["mean"]', 'data.var["std"]', 'data.var["var"]']
     )
     _data_name: str = PrivateAttr(default="data")
@@ -756,7 +756,7 @@ class ScPpSample(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.sample")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="data")
 
 
@@ -801,7 +801,7 @@ class ScPpDownsampleCounts(BaseAPI):
     #     """,
     # )
     _api_name: str = PrivateAttr(default="sc.pp.downsample_counts")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -834,7 +834,7 @@ class ScPpCombat(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.combat")
-    _products_original: list[str] = PrivateAttr(default=["data.X"])
+    _products_str_repr: list[str] = PrivateAttr(default=["data.X"])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -957,7 +957,7 @@ class ScPpScrublet(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.scrublet")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.obs["doublet_score"]',
             'data.obs["predicted_doublet"]',
@@ -1004,7 +1004,7 @@ class ScPpScrubletSimulateDoublets(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pp.scrublet_simulate_doublets")
-    _products_original: list[str] = PrivateAttr(
+    _products_str_repr: list[str] = PrivateAttr(
         default=[
             'data.obsm["scrublet"]["doublet_parents"]',
             'data.uns["scrublet"]["parameters"]',

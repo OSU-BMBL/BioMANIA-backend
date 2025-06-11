@@ -2,7 +2,7 @@ from biochatter.api_agent.base.agent_abc import BaseQueryBuilder, BaseFetcher, B
 from biochatter.llm_connect import Conversation
 from biochatter.api_agent.dep_graph import DependencyGraph, ExecutionGraph
 from biochatter.api_agent.dep_graph.utils import is_active_dep, retrieve_products, aggregate_deps
-from biochatter.api_agent.base.agent_abc import BaseAPI
+from biochatter.api_agent.base.agent_abc import BaseAPI, ArgDefaultChangeVerifier
 from .api_hub import TARGET_TOOLS_DICT, TOOLS_DICT
 from .info_hub import api_names, dependencies
 from .base import ScanpyDependency
@@ -20,8 +20,10 @@ from tqdm import tqdm
 class ScanpyQueryBuilder(BaseQueryBuilder):
     def __init__(self, 
                  conversation: Conversation,
+                 verifier: ArgDefaultChangeVerifier | None = None
                  ):
         super().__init__(conversation=conversation)
+        self.verifier = verifier
         self.dep_graph = DependencyGraph(api_names=api_names, 
                                          dependencies=dependencies, 
                                          api_class_dict=TOOLS_DICT,
@@ -74,7 +76,9 @@ class ScanpyQueryBuilder(BaseQueryBuilder):
             tool_class = tool.__class__
 
         if tool._api_name != "root":
-            tool.post_parametrise()
+            if self.verifier is not None:
+                tool = self.verifier.verify(tool, question)
+            tool.set_products_keys_info()
         
         return tool
     
@@ -125,7 +129,7 @@ class ScanpyFetcher(BaseFetcher):
             in_deps = execution_graph.in_deps(api._api_name)
             if len(in_deps) > 0:
                 api = aggregate_deps(in_deps, api)
-            # Jiahang (severe): question="visualize diffusion map embedding of cells which are clustered by leiden algorithm."
+            # Jiahang (TODO, high priority): question="visualize diffusion map embedding of cells which are clustered by leiden algorithm."
             # predict sc.pl.diffmap must set n_comps=2, leading to error.
             # this cannot be prevented by prompts, like
             # "Predict an argument value only when user clearly specifies. Leave arguments as default otherwise."

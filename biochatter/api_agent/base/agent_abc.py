@@ -4,8 +4,6 @@ Provides base classes for query builders, fetchers, and interpreters used in
 API interactions and result processing.
 """
 
-import os
-from dotenv import load_dotenv
 from abc import ABC, abstractmethod
 import ast
 import json
@@ -14,6 +12,12 @@ from copy import deepcopy
 
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, ConfigDict, Field, create_model, PrivateAttr, field_validator, model_validator
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain.output_parsers.fix import OutputFixingParser
+from langchain.output_parsers import RetryOutputParser
+from langchain_core.exceptions import OutputParserException
+
 from biochatter.llm_connect import Conversation
 from .utils import run_codes
 
@@ -445,7 +449,7 @@ class BaseAPI(BaseObject):
     # Jiahang (TODO): revise below
     # these members should be set in class definition.
     _api_name: str = PrivateAttr(default="")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="")
 
     # these members can only be set during execution graph forward pass.
@@ -490,16 +494,19 @@ class BaseAPI(BaseObject):
             self._results.data = results
             self._api_calling = api_calling
         
-    def post_parametrise(self):
+    def set_products_keys_info(self):
         """Post parametrise the API.
         
         Assuming the API is instantiated and parametrised, this method is to complete the API
         with other information, such as _products.keys_info.
+
+        Jiahang (TODO, simple): set a validator to assign self._products each time when 
+        self._products_str_repr is set.
         """
         self._products = BaseData(
-            keys_info=_str_list_to_keys_info(self._products_original)
+            keys_info=_str_list_to_keys_info(self._products_str_repr)
         )
-        
+
 class ROOT(BaseAPI):
     """This API does nothing but just returning the input. This API has no arguments and dependencies."""
     _api_name: str = PrivateAttr(default="root")
@@ -600,4 +607,86 @@ class InputDependency(BaseObject):
         assert len(self.args) == 1 and len(self.arg_types) == 1, "Only one activation arg is permitted for the dependency."
         return self
     
-    
+
+class ArgDefaultChangeVerifier:
+    def __init__(self, verifier: BaseChatModel):
+        self.verifier = verifier
+
+    def verify(self, api: BaseAPI, question: str) -> bool:
+        """If the default value of each argument is different from its prediction,
+        we leverage a LLM to verify if the change is necessary. Motivations:
+        1. To reduce the hallucination, especially when the ratio of user query information
+            to API argument is low.
+        2. In fact, the change of arg value will increase the bug probability. If this change 
+            is unnecessary, it should not be applied.
+
+        Jiahang (TODO, evaluation): this verifier should be evaluated regarding whether 
+        it can help reduce hallucination.
+        """
+
+        # Jiahang (TODO): extract prompts into a separate file.
+        # Jiahang (TODO): every llm invoke should use retry framework in gen_data_model.py.
+        output_format_annotations = {}
+        desc = {}
+        for name, field in api.model_fields.items():
+            arg_val = api.__getattribute__(name)
+            default = field.default
+            # for arg without default value, we do not need to verify.
+            if field.is_required() is False and arg_val != default:
+                _desc = f"The default value is {default}, the actual argument value is {arg_val}. " \
+                        f"The description of the argument is {field.description}."
+                # output_format_annotations[name] = bool
+                output_format_annotations[name] = (str, Field(..., description="The check result, yes or no, and the reason for the argument."))
+                desc[name] = _desc
+        
+        if len(output_format_annotations) == 0:
+            return api
+        
+        output_format = create_model(
+            "VerifyResult", **output_format_annotations,  # type: ignore
+        )
+        parser = PydanticOutputParser(pydantic_object=output_format)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                # ("system", "You are required to check whether a change of each argument value from default value is explicitly required by the user query. Respond with True if yes, otherwise False, for each argument. The response format follows these instructions:\n{format}"),
+                ("system", "You are required to check whether a change of each argument value from default value is explicitly required by the user query. Provide your check result and the reason for each argument. The response format follows these instructions:\n{format}"),
+                ("user", "The user query is {question}. The API is {api_name}. The arguments are {desc}."),
+            ]
+        )
+        prompt = prompt.format_prompt(
+            format=parser.get_format_instructions(),
+            question=question,
+            api_name=api._api_name,
+            desc=desc
+        )
+        response = self.verifier.invoke(prompt)
+
+        except_tag = True
+        if except_tag:
+            try:
+                result: dict = parser.invoke(response).model_dump()
+                except_tag = False
+            except OutputParserException as e:
+                except_tag = True
+        if except_tag:
+            try:
+                correct_parser = OutputFixingParser.from_llm(parser=parser, llm=self.verifier)
+                result: dict = correct_parser.invoke(response).model_dump()
+                except_tag = False
+            except OutputParserException as e:
+                except_tag = True
+        if except_tag:
+            try:
+                correct_parser = RetryOutputParser.from_llm(parser=parser, llm=self.verifier, max_retries=3)
+                result: dict = correct_parser.parse_with_prompt(response.content, prompt)
+            except OutputParserException as e:
+                print(f"Argument Default Change Verifier failed.")
+                print(f"The error is: {e}")
+                return api
+
+        for name, val in result.items():
+            if not val:
+                print(f"The argument {name} is reset to default value.")
+                api.__setattr__(name, api.model_fields[name].default)
+        
+        return api

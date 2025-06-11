@@ -23,7 +23,7 @@ class {{ api['model_name'] }}(BaseAPI):
     )
     {%- endfor %}
     _api_name: str = PrivateAttr(default="{{ api['name'] }}")
-    _products_original: list[str] = PrivateAttr(default={{ api['products'] }})
+    _products_str_repr: list[str] = PrivateAttr(default={{ api['products'] }})
     _data_name: str = PrivateAttr(default="{{ api['data_name'] }}")
 
 {%- endfor %}

@@ -106,7 +106,7 @@ def data_model_to_py(data_model: type[BaseAPI], additional_imports: list[str], n
 
             # Add private attributes
             private_attrs = []
-            keys = ["_api_name", "_products_original", "_data_name"]
+            keys = ["_api_name", "_products_str_repr", "_data_name"]
             for key in keys:
                 call = self.data_model.__private_attributes__[key].__repr__()
                 call = cst.parse_expression(call)
@@ -149,9 +149,9 @@ def data_model_to_py(data_model: type[BaseAPI], additional_imports: list[str], n
     modified_module = module.visit(transformer)
     codes = modified_module.code
 
-    # hack: replace _products_original: str = to _products_original: list[str] = 
+    # hack: replace _products_str_repr: str = to _products_str_repr: list[str] = 
     # since libcst not support list[str] in the type annotation.
-    codes = re.sub(r'_products_original\s*:\s*str', '_products_original: list[str]', codes)
+    codes = re.sub(r'_products_str_repr\s*:\s*str', '_products_str_repr: list[str]', codes)
     
     return codes
 
@@ -161,6 +161,8 @@ def simplify_desc(
 ) -> dict[str, tuple[Any, Field]]:
     """Summarize the descriptions of multiple fields.
     """
+
+    # Jiahang (TODO): common codes below, should be reused.
     output_format_annotations = {
         "doc": str,
     }
@@ -384,7 +386,7 @@ def apis_to_data_models(
 
         # Create the Pydantic model
         fields['_api_name'] = (str, PrivateAttr(default=api_name))
-        fields['_products_original'] = (str, PrivateAttr(default=_api['products']))
+        fields['_products_str_repr'] = (str, PrivateAttr(default=_api['products']))
         fields['_data_name'] = (str, PrivateAttr(default=_api['data_name']))
 
         data_model = create_model(

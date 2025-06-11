@@ -258,7 +258,7 @@ class ScPlPaga(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.paga")
-    _products_original: list[str] = PrivateAttr(default=['data.uns["paga"]["pos"]'])
+    _products_str_repr: list[str] = PrivateAttr(default=['data.uns["paga"]["pos"]'])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -430,7 +430,7 @@ class ScPlScatter(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.scatter")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -718,7 +718,7 @@ class ScPlUmap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.umap")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1004,7 +1004,7 @@ class ScPlTsne(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.tsne")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1151,7 +1151,7 @@ class ScPlHeatmap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.heatmap")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1370,7 +1370,7 @@ class ScPlDotplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.dotplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1499,7 +1499,7 @@ class ScPlViolin(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.violin")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1557,7 +1557,7 @@ class ScPlDendrogram(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.dendrogram")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1849,7 +1849,7 @@ class ScPlDiffmap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.diffmap")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -1890,7 +1890,7 @@ class ScPlHighlyVariableGenes(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.highly_variable_genes")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2182,7 +2182,7 @@ class ScPlPca(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.pca")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2311,7 +2311,7 @@ class ScPlEmbeddingDensity(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.embedding_density")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2392,7 +2392,7 @@ class ScPlRankGenesGroups(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2479,7 +2479,7 @@ class ScPlRankGenesGroupsDotplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_dotplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2585,7 +2585,7 @@ class ScPlRankGenesGroupsViolin(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_violin")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2660,7 +2660,7 @@ class ScPlRankGenesGroupsHeatmap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_heatmap")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2741,7 +2741,7 @@ class ScPlRankGenesGroupsStackedViolin(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_stacked_violin")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2828,7 +2828,7 @@ class ScPlRankGenesGroupsMatrixplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_matrixplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2903,7 +2903,7 @@ class ScPlRankGenesGroupsTracksplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.rank_genes_groups_tracksplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -2966,7 +2966,7 @@ class ScPlHighestExprGenes(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.highest_expr_genes")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3058,7 +3058,7 @@ class ScPlTracksplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.tracksplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3103,7 +3103,7 @@ class ScPlClustermap(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.clustermap")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3327,7 +3327,7 @@ class ScPlStackedViolin(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.stacked_violin")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3509,7 +3509,7 @@ class ScPlMatrixplot(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.matrixplot")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3561,7 +3561,7 @@ class ScPlScrubletScoreDistribution(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.scrublet_score_distribution")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3607,7 +3607,7 @@ class ScPlPcaLoadings(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.pca_loadings")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -3901,7 +3901,7 @@ class ScPlDrawGraph(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.draw_graph")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
@@ -4065,7 +4065,7 @@ class ScPlPagaPath(BaseAPI):
         """,
     )
     _api_name: str = PrivateAttr(default="sc.pl.paga_path")
-    _products_original: list[str] = PrivateAttr(default=[])
+    _products_str_repr: list[str] = PrivateAttr(default=[])
     _data_name: str = PrivateAttr(default="adata")
 
 
