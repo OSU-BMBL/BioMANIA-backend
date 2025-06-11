@@ -84,6 +84,7 @@ class Conversation(ABC):
         correct: bool = False,
         split_correction: bool = False,
         use_ragagent_selector: bool = False,
+        only_use_rag: bool = False
     ) -> None:
         super().__init__()
         self.model_name = model_name
@@ -99,7 +100,7 @@ class Conversation(ABC):
         self._chat = None
         self._ca_chat = None
         self.temperature = temperature
-
+        self.only_use_rag = only_use_rag
     @property
     def chat(self):
         """Access the chat attribute with error handling."""
@@ -326,7 +327,8 @@ class Conversation(ABC):
 
         self._inject_context(text)
 
-        msg, token_usage = self._primary_query()
+        if not self.only_use_rag:
+            msg, token_usage = self._primary_query()
 
         if not token_usage:
             # indicates error
