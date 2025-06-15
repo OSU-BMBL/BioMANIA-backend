@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biomania-backend"
-version = "0.10.3"
+version = "0.10.4"
 description = "Backend library for conversational AI in biomedicine"
 authors = [
     "Jiahang Li <lspongebobjh@gmail.com>",
